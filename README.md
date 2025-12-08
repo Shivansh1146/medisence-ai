@@ -6,6 +6,11 @@
 ## 📌 Project Overview
 MedicSense AI is an AI-powered healthcare assistant designed to streamline patient triage and appointment management. It leverages Google's Gemini API to analyze symptoms and provide preliminary triage recommendations, while also offering a robust appointment scheduling system for doctors and administrators.
 
+### 🌐 Live Demo
+[https://medisence-ai.vercel.app/](https://medisence-ai.vercel.app/)
+> **Note:** The live demo may have limited functionality (specifically AI features) as the backend API connection might not be fully active in the demo environment.
+
+
 ### Key Features
 - **AI Symptom Triage**: Uses Gemini API to analyze natural language symptoms and classify urgency (Self-care, Consult Soon, Urgent).
 - **Smart Chat Interface**: User-friendly chat UI for patients to describe symptoms and receive immediate feedback.
@@ -29,6 +34,14 @@ The project follows a clean, modular architecture:
 - Python 3.10+
 - Docker (optional)
 - Google Cloud Project with Gemini API enabled
+
+### Installation
+
+Clone the repository:
+```bash
+git clone https://github.com/aakash4dev/medisence-ai.git
+cd medisence-ai
+```
 
 ### Local Development
 
