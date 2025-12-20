@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>
+      MedicSense AI - Your Healthcare Partner | AI-Powered Medical Assistant
+    </title>
+    <meta
+      name="description"
+      content="24/7 AI-powered medical consultation, symptom analysis, and healthcare guidance"
+    />
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Poppins:wght@300;400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="style_pro.css" />
+    <link rel="stylesheet" href="style_pro_extras.css" />
+
+    <!-- Favicon -->
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏥</text></svg>"
+    />
+  </head>
+
+  <body>
+    <!-- Top Bar -->
+    <div class="top-bar">
+      <div class="container">
+        <div class="top-bar-content">
+          <div class="top-bar-left">
+            <span class="top-bar-item"
+              ><i class="fas fa-shield-virus"></i> AI-Powered Healthcare</span
+            >
+            <span class="top-bar-item"
+              ><i class="fas fa-clock"></i> 24/7 Available</span
+            >
+          </div>
+          <div class="top-bar-right">
+            <span class="top-bar-item"
+              ><i class="fas fa-headset"></i> Support: 1800-XXX-XXXX</span
+            >
+            <button class="emergency-btn" onclick="handleEmergency()">
+              <i class="fas fa-ambulance"></i> Emergency
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Navigation -->
+    <nav class="navbar">
+      <div class="container">
+        <div class="nav-content">
+          <!-- Logo -->
+          <div class="logo">
+            <div class="logo-icon">
+              <i class="fas fa-heartbeat"></i>
+            </div>
+            <div class="logo-text">
+              <span class="brand-name"
+                >MedicSense<span class="ai-badge">AI</span></span
+              >
+              <span class="brand-tagline">Your Healthcare Partner</span>
+            </div>
+          </div>
+
+          <!-- Navigation Links -->
+          <ul class="nav-menu">
+            <li>
+              <a href="#home" class="nav-link active"
+                ><i class="fas fa-home"></i> Home</a
+              >
+            </li>
+            <li>
+              <a href="#services" class="nav-link"
+                ><i class="fas fa-briefcase-medical"></i> Services</a
+              >
+            </li>
+            <li>
+              <a href="#ai-chat" class="nav-link"
+                ><i class="fas fa-robot"></i> AI Chat</a
+              >
+            </li>
+            <li>
+              <a href="#camera" class="nav-link"
+                ><i class="fas fa-camera-retro"></i> Scan</a
+              >
+            </li>
+            <li>
+              <a href="#health-tracker" class="nav-link"
+                ><i class="fas fa-chart-line"></i> Track Health</a
+              >
+            </li>
+          </ul>
+
+          <!-- Action Buttons -->
+          <div class="nav-actions">
+            <button class="btn-icon" onclick="toggleTheme()">
+              <i class="fas fa-moon"></i>
+            </button>
+            <button class="btn-primary" onclick="scrollToChat()">
+              <i class="fas fa-comment-medical"></i> Consult AI Doctor
+            </button>
+          </div>
+
+          <!-- Mobile Menu Toggle -->
+          <button class="mobile-menu-btn" onclick="toggleMobileMenu()">
+            <i class="fas fa-bars"></i>
+          </button>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Hero Section - Like Apollo/1mg -->
+    <section id="home" class="hero">
+      <div class="container">
+        <div class="hero-grid">
+          <!-- Left Content -->
+          <div class="hero-content">
+            <div class="hero-badge">
+              <i class="fas fa-shield-alt"></i>
+              <span>Powered by Google Gemini AI</span>
+            </div>
+
+            <h1 class="hero-title">
+              Get Instant
+              <span class="gradient-text">Medical Consultation</span>
+              <br />Anytime, Anywhere
+            </h1>
+
+            <p class="hero-subtitle">
+              AI-powered symptom checker, emergency detection, personalized
+              health tracking, and 24/7 medical guidance with Google's advanced
+              Gemini AI technology.
+            </p>
+
+            <!-- Quick Actions -->
+            <div class="hero-actions">
+              <button class="btn-hero-primary" onclick="scrollToChat()">
+                <i class="fas fa-robot"></i>
+                <div>
+                  <span class="btn-label">Talk to AI Doctor</span>
+                  <span class="btn-sublabel"
+                    >Free • Instant • Confidential</span
+                  >
+                </div>
+              </button>
+
+              <button class="btn-hero-secondary" onclick="scrollToCamera()">
+                <i class="fas fa-camera"></i>
+                <div>
+                  <span class="btn-label">Scan Injury/Rash</span>
+                  <span class="btn-sublabel">AI Image Analysis</span>
+                </div>
+              </button>
+            </div>
+
+            <!-- Trust Indicators -->
+            <div class="trust-indicators">
+              <div class="trust-item">
+                <i class="fas fa-check-circle"></i>
+                <span>100% Private & Secure</span>
+              </div>
+              <div class="trust-item">
+                <i class="fas fa-brain"></i>
+                <span>Advanced AI Technology</span>
+              </div>
+              <div class="trust-item">
+                <i class="fas fa-clock"></i>
+                <span>Instant Response</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Visual -->
+          <div class="hero-visual">
+            <div class="hero-image-container">
+              <img
+                src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 400'%3E%3Crect fill='%234f46e5' width='400' height='400' rx='20'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-size='100' fill='white'%3E🏥%3C/text%3E%3C/svg%3E"
+                alt="Medical AI"
+                class="hero-image"
+              />
+
+              <!-- Floating Cards -->
+              <div class="floating-stat stat-1">
+                <div class="stat-icon"><i class="fas fa-heartbeat"></i></div>
+                <div class="stat-content">
+                  <div class="stat-number">100K+</div>
+                  <div class="stat-label">Consultations</div>
+                </div>
+              </div>
+
+              <div class="floating-stat stat-2">
+                <div class="stat-icon"><i class="fas fa-user-md"></i></div>
+                <div class="stat-content">
+                  <div class="stat-number">99.9%</div>
+                  <div class="stat-label">Accuracy</div>
+                </div>
+              </div>
+
+              <div class="floating-stat stat-3">
+                <div class="stat-icon"><i class="fas fa-clock"></i></div>
+                <div class="stat-content">
+                  <div class="stat-number">24/7</div>
+                  <div class="stat-label">Available</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Services Section - Like NetMeds -->
+    <section id="services" class="services">
+      <div class="container">
+        <div class="section-header">
+          <h2 class="section-title">
+            Our <span class="gradient-text">Healthcare Services</span>
+          </h2>
+          <p class="section-subtitle">
+            Comprehensive AI-powered medical assistance at your fingertips
+          </p>
+        </div>
+
+        <div class="services-grid">
+          <!-- Service Card 1 -->
+          <div class="service-card">
+            <div class="service-icon icon-blue">
+              <i class="fas fa-robot"></i>
+            </div>
+            <h3 class="service-title">AI Medical Chatbot</h3>
+            <p class="service-desc">
+              Chat with our advanced Gemini AI for instant symptom analysis and
+              medical guidance
+            </p>
+            <ul class="service-features">
+              <li><i class="fas fa-check"></i> Context-aware conversations</li>
+              <li><i class="fas fa-check"></i> Multi-language support</li>
+              <li><i class="fas fa-check"></i> Instant diagnosis</li>
+            </ul>
+            <button class="service-btn" onclick="scrollToChat()">
+              Try Now <i class="fas fa-arrow-right"></i>
+            </button>
+          </div>
+
+          <!-- Service Card 2 -->
+          <div class="service-card featured">
+            <div class="featured-badge">Most Popular</div>
+            <div class="service-icon icon-purple">
+              <i class="fas fa-camera-retro"></i>
+            </div>
+            <h3 class="service-title">AI Image Scanner</h3>
+            <p class="service-desc">
+              Upload photos of injuries, rashes, or symptoms for AI-powered
+              visual analysis
+            </p>
+            <ul class="service-features">
+              <li><i class="fas fa-check"></i> Instant image analysis</li>
+              <li><i class="fas fa-check"></i> Severity assessment</li>
+              <li><i class="fas fa-check"></i> Treatment recommendations</li>
+            </ul>
+            <button class="service-btn" onclick="scrollToCamera()">
+              Scan Now <i class="fas fa-arrow-right"></i>
+            </button>
+          </div>
+
+          <!-- Service Card 3 -->
+          <div class="service-card">
+            <div class="service-icon icon-green">
+              <i class="fas fa-chart-line"></i>
+            </div>
+            <h3 class="service-title">Health Tracking</h3>
+            <p class="service-desc">
+              Monitor your health metrics, symptoms, and get personalized
+              insights
+            </p>
+            <ul class="service-features">
+              <li><i class="fas fa-check"></i> Symptom logging</li>
+              <li><i class="fas fa-check"></i> Pattern analysis</li>
+              <li><i class="fas fa-check"></i> Health reports</li>
+            </ul>
+            <button
+              class="service-btn"
+              onclick="scrollToSection('health-tracker')"
+            >
+              Track Health <i class="fas fa-arrow-right"></i>
+            </button>
+          </div>
+
+          <!-- Service Card 4 -->
+          <div class="service-card">
+            <div class="service-icon icon-red">
+              <i class="fas fa-ambulance"></i>
+            </div>
+            <h3 class="service-title">Emergency Detection</h3>
+            <p class="service-desc">
+              Automatic detection of critical conditions with immediate
+              first-aid instructions
+            </p>
+            <ul class="service-features">
+              <li><i class="fas fa-check"></i> Real-time alerts</li>
+              <li><i class="fas fa-check"></i> First-aid guidance</li>
+              <li><i class="fas fa-check"></i> Hospital locator</li>
+            </ul>
+            <button class="service-btn" onclick="handleEmergency()">
+              Emergency Help <i class="fas fa-arrow-right"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- AI Chat Section - Main Feature -->
+    <section id="ai-chat" class="chat-section">
+      <div class="container">
+        <div class="section-header">
+          <div class="ai-badge-large">
+            <i class="fas fa-brain"></i>
+            <span>Powered by Google Gemini AI</span>
+          </div>
+          <h2 class="section-title">
+            Talk to Our <span class="gradient-text">AI Medical Assistant</span>
+          </h2>
+          <p class="section-subtitle">
+            Get instant medical consultation powered by advanced artificial
+            intelligence
+          </p>
+        </div>
+
+        <div class="chat-container-pro">
+          <!-- Chat Interface -->
+          <div class="chat-interface">
+            <!-- Chat Header -->
+            <div class="chat-header">
+              <div class="doctor-info">
+                <div class="doctor-avatar">
+                  <i class="fas fa-robot"></i>
+                  <span class="status-indicator"></span>
+                </div>
+                <div class="doctor-details">
+                  <h3 class="doctor-name">MedicSense AI</h3>
+                  <p class="doctor-status">
+                    <span class="status-dot"></span> Online • Gemini-Powered
+                  </p>
+                </div>
+              </div>
+              <div class="chat-actions">
+                <button
+                  class="chat-action-btn"
+                  onclick="clearChat()"
+                  title="Clear chat"
+                >
+                  <i class="fas fa-trash-alt"></i>
+                </button>
+                <button
+                  class="chat-action-btn"
+                  onclick="exportChat()"
+                  title="Export chat"
+                >
+                  <i class="fas fa-download"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- Chat Messages -->
+            <div class="chat-messages" id="chatMessages">
+              <!-- Welcome Message -->
+              <div class="message ai-message">
+                <div class="message-avatar">
+                  <i class="fas fa-robot"></i>
+                </div>
+                <div class="message-content">
+                  <div class="message-bubble">
+                    <p>
+                      👋 Hello! I'm your AI Medical Assistant powered by
+                      <strong>Google Gemini</strong>.
+                    </p>
+                    <p>I can help you with:</p>
+                    <ul class="help-list">
+                      <li>🔍 Symptom analysis and diagnosis</li>
+                      <li>🚨 Emergency detection and first aid</li>
+                      <li>💊 Medication information</li>
+                      <li>🏥 Doctor recommendations</li>
+                      <li>📊 Health tracking and insights</li>
+                    </ul>
+                    <p><strong>How can I help you today?</strong></p>
+                  </div>
+                  <div class="message-time">Just now</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Quick Suggestions -->
+            <div class="quick-suggestions" id="quickSuggestions">
+              <div class="suggestion-label">Quick Questions:</div>
+              <button
+                class="suggestion-chip"
+                onclick="sendQuickMessage('I have a fever and headache')"
+              >
+                <i class="fas fa-thermometer-half"></i> Fever & Headache
+              </button>
+              <button
+                class="suggestion-chip"
+                onclick="sendQuickMessage('I have chest pain')"
+              >
+                <i class="fas fa-heart-pulse"></i> Chest Pain
+              </button>
+              <button
+                class="suggestion-chip"
+                onclick="sendQuickMessage('I have a cough and cold')"
+              >
+                <i class="fas fa-head-side-cough"></i> Cough & Cold
+              </button>
+              <button
+                class="suggestion-chip"
+                onclick="sendQuickMessage('I need first aid information')"
+              >
+                <i class="fas fa-first-aid"></i> First Aid
+              </button>
+            </div>
+
+            <!-- Typing Indicator -->
+            <div
+              class="typing-indicator"
+              id="typingIndicator"
+              style="display: none"
+            >
+              <div class="message-avatar">
+                <i class="fas fa-robot"></i>
+              </div>
+              <div class="typing-dots">
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+              <span class="typing-text">AI is analyzing...</span>
+            </div>
+
+            <!-- Chat Input -->
+            <div class="chat-input-container">
+              <div class="chat-input-wrapper">
+                <button
+                  class="input-action-btn"
+                  onclick="attachFile()"
+                  title="Attach file"
+                >
+                  <i class="fas fa-paperclip"></i>
+                </button>
+
+                <textarea
+                  id="chatInput"
+                  class="chat-input"
+                  placeholder="Describe your symptoms or ask a medical question..."
+                  rows="1"
+                ></textarea>
+
+                <button
+                  class="input-action-btn"
+                  onclick="voiceInput()"
+                  title="Voice input"
+                >
+                  <i class="fas fa-microphone"></i>
+                </button>
+
+                <button
+                  class="send-btn"
+                  onclick="sendChatMessage()"
+                  id="sendBtn"
+                >
+                  <i class="fas fa-paper-plane"></i>
+                </button>
+              </div>
+              <div class="input-hint">
+                <i class="fas fa-shield-alt"></i> Your conversation is private
+                and secure • Press Enter to send
+              </div>
+            </div>
+          </div>
+
+          <!-- Chat Sidebar -->
+          <div class="chat-sidebar">
+            <!-- AI Info Card -->
+            <div class="sidebar-card ai-info-card">
+              <div class="ai-info-header">
+                <i class="fas fa-brain"></i>
+                <h3>AI Technology</h3>
+              </div>
+              <div class="ai-info-content">
+                <div class="ai-feature">
+                  <i class="fas fa-check-circle"></i>
+                  <div>
+                    <strong>Google Gemini AI</strong>
+                    <p>Latest AI model for medical analysis</p>
+                  </div>
+                </div>
+                <div class="ai-feature">
+                  <i class="fas fa-check-circle"></i>
+                  <div>
+                    <strong>Context Aware</strong>
+                    <p>Remembers conversation history</p>
+                  </div>
+                </div>
+                <div class="ai-feature">
+                  <i class="fas fa-check-circle"></i>
+                  <div>
+                    <strong>Multi-turn Chat</strong>
+                    <p>Natural conversation flow</p>
+                  </div>
+                </div>
+                <div class="ai-feature">
+                  <i class="fas fa-check-circle"></i>
+                  <div>
+                    <strong>Sentiment Analysis</strong>
+                    <p>Understands emotional context</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Health Score Card -->
+            <div class="sidebar-card health-score-card">
+              <h3><i class="fas fa-heart-pulse"></i> Your Health Score</h3>
+              <div class="health-score">
+                <div class="score-circle">
+                  <svg viewBox="0 0 100 100">
+                    <circle
+                      cx="50"
+                      cy="50"
+                      r="45"
+                      fill="none"
+                      stroke="#e0e7ff"
+                      stroke-width="8"
+                    />
+                    <circle
+                      cx="50"
+                      cy="50"
+                      r="45"
+                      fill="none"
+                      stroke="#4f46e5"
+                      stroke-width="8"
+                      stroke-dasharray="283"
+                      stroke-dashoffset="70"
+                      stroke-linecap="round"
+                    />
+                  </svg>
+                  <div class="score-value">
+                    <span class="score-number">8.5</span>
+                    <span class="score-total">/10</span>
+                  </div>
+                </div>
+                <p class="score-label">Good Health</p>
+              </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="sidebar-card quick-actions-card">
+              <h3><i class="fas fa-bolt"></i> Quick Actions</h3>
+              <button class="quick-action-btn" onclick="scrollToCamera()">
+                <i class="fas fa-camera"></i> Scan Injury/Rash
+              </button>
+              <button class="quick-action-btn" onclick="scheduleAppointment()">
+                <i class="fas fa-calendar-check"></i> Schedule Appointment
+              </button>
+              <button class="quick-action-btn" onclick="viewHealthHistory()">
+                <i class="fas fa-history"></i> View Health History
+              </button>
+              <button
+                class="quick-action-btn emergency"
+                onclick="handleEmergency()"
+              >
+                <i class="fas fa-ambulance"></i> Emergency Help
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Camera Scanner Section -->
+    <section id="camera" class="camera-section">
+      <div class="container">
+        <div class="section-header">
+          <div class="ai-badge-large">
+            <i class="fas fa-camera-retro"></i>
+            <span>AI-Powered Image Analysis</span>
+          </div>
+          <h2 class="section-title">
+            Scan Injuries & Symptoms with
+            <span class="gradient-text">AI Vision</span>
+          </h2>
+          <p class="section-subtitle">
+            Upload images of injuries, rashes, or symptoms for instant AI
+            analysis powered by Google Gemini Vision
+          </p>
+        </div>
+
+        <div class="camera-container-pro">
+          <div class="camera-grid">
+            <!-- Upload Area -->
+            <div class="camera-upload-area">
+              <div class="upload-card">
+                <div class="upload-icon">
+                  <i class="fas fa-cloud-upload-alt"></i>
+                </div>
+                <h3 class="upload-title">Upload Medical Image</h3>
+                <p class="upload-desc">Drag & drop or click to upload</p>
+
+                <input
+                  type="file"
+                  id="cameraInput"
+                  accept="image/*"
+                  style="display: none"
+                  onchange="handleImageUpload(event)"
+                />
+
+                <button
+                  class="upload-btn"
+                  onclick="document.getElementById('cameraInput').click()"
+                >
+                  <i class="fas fa-upload"></i> Choose Image
+                </button>
+
+                <div class="upload-formats">
+                  <span>Supported formats:</span>
+                  <div class="format-tags">
+                    <span class="format-tag">JPG</span>
+                    <span class="format-tag">PNG</span>
+                    <span class="format-tag">WEBP</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Image Preview -->
+              <div
+                class="image-preview-card"
+                id="imagePreview"
+                style="display: none"
+              >
+                <div class="preview-header">
+                  <h4>Image Preview</h4>
+                  <button class="remove-btn" onclick="removeImage()">
+                    <i class="fas fa-times"></i>
+                  </button>
+                </div>
+                <div class="preview-image-container">
+                  <img id="previewImage" alt="Preview" />
+                </div>
+                <button class="analyze-btn" onclick="analyzeImage()">
+                  <i class="fas fa-brain"></i> Analyze with AI
+                </button>
+              </div>
+            </div>
+
+            <!-- Analysis Results -->
+            <div class="camera-results-area">
+              <div
+                class="results-card"
+                id="analysisResults"
+                style="display: none"
+              >
+                <div class="results-header">
+                  <h3><i class="fas fa-microscope"></i> AI Analysis Results</h3>
+                  <span class="analysis-badge" id="severityBadge"
+                    >Analyzing...</span
+                  >
+                </div>
+
+                <div class="results-content" id="resultsContent">
+                  <!-- Results will be populated here -->
+                </div>
+
+                <div class="results-actions">
+                  <button class="result-action-btn" onclick="downloadReport()">
+                    <i class="fas fa-download"></i> Download Report
+                  </button>
+                  <button class="result-action-btn" onclick="shareResults()">
+                    <i class="fas fa-share-alt"></i> Share with Doctor
+                  </button>
+                </div>
+              </div>
+
+              <!-- Camera Guidelines -->
+              <div class="guidelines-card">
+                <h4>
+                  <i class="fas fa-info-circle"></i> Tips for Best Results
+                </h4>
+                <ul class="guidelines-list">
+                  <li><i class="fas fa-check"></i> Use good lighting</li>
+                  <li><i class="fas fa-check"></i> Keep camera steady</li>
+                  <li><i class="fas fa-check"></i> Focus on affected area</li>
+                  <li><i class="fas fa-check"></i> Avoid blurry images</li>
+                  <li><i class="fas fa-check"></i> Show clear symptoms</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Health Tracker Section -->
+    <section id="health-tracker" class="health-tracker-section">
+      <div class="container">
+        <div class="section-header">
+          <h2 class="section-title">
+            Track Your <span class="gradient-text">Health Journey</span>
+          </h2>
+          <p class="section-subtitle">
+            Monitor vitals, log symptoms, and get AI-powered insights
+          </p>
+        </div>
+
+        <div class="tracker-grid">
+          <!-- Vital Signs Card -->
+          <div class="tracker-card">
+            <h3><i class="fas fa-heartbeat"></i> Record Vital Signs</h3>
+            <div class="vital-inputs">
+              <div class="input-group">
+                <label>Temperature (°F)</label>
+                <input
+                  type="number"
+                  id="temperature"
+                  placeholder="98.6"
+                  step="0.1"
+                />
+              </div>
+              <div class="input-group">
+                <label>Heart Rate (bpm)</label>
+                <input type="number" id="heartRate" placeholder="72" />
+              </div>
+              <div class="input-group">
+                <label>Blood Pressure</label>
+                <input type="text" id="bloodPressure" placeholder="120/80" />
+              </div>
+              <div class="input-group">
+                <label>Oxygen Level (%)</label>
+                <input type="number" id="oxygenLevel" placeholder="98" />
+              </div>
+            </div>
+            <button class="tracker-btn" onclick="recordVitals()">
+              <i class="fas fa-save"></i> Save Vitals
+            </button>
+          </div>
+
+          <!-- Health History -->
+          <div class="tracker-card">
+            <h3><i class="fas fa-history"></i> Recent Activity</h3>
+            <div class="activity-list" id="activityList">
+              <div class="activity-item">
+                <div class="activity-icon"><i class="fas fa-comments"></i></div>
+                <div class="activity-content">
+                  <p class="activity-title">AI Consultation</p>
+                  <p class="activity-time">2 hours ago</p>
+                </div>
+              </div>
+              <div class="activity-item">
+                <div class="activity-icon"><i class="fas fa-camera"></i></div>
+                <div class="activity-content">
+                  <p class="activity-title">Image Scan</p>
+                  <p class="activity-time">Yesterday</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="container">
+        <div class="footer-grid">
+          <div class="footer-col">
+            <div class="footer-logo">
+              <i class="fas fa-heartbeat"></i>
+              <span>MedicSense AI</span>
+            </div>
+            <p class="footer-desc">
+              AI-powered healthcare assistance available 24/7. Get instant
+              medical consultation powered by Google Gemini.
+            </p>
+            <div class="social-links">
+              <a href="#" class="social-link"
+                ><i class="fab fa-facebook"></i
+              ></a>
+              <a href="#" class="social-link"><i class="fab fa-twitter"></i></a>
+              <a href="#" class="social-link"
+                ><i class="fab fa-instagram"></i
+              ></a>
+              <a href="#" class="social-link"
+                ><i class="fab fa-linkedin"></i
+              ></a>
+            </div>
+          </div>
+
+          <div class="footer-col">
+            <h4 class="footer-title">Services</h4>
+            <ul class="footer-links">
+              <li><a href="#ai-chat">AI Medical Chat</a></li>
+              <li><a href="#camera">Image Scanner</a></li>
+              <li><a href="#health-tracker">Health Tracking</a></li>
+              <li><a href="#emergency">Emergency Help</a></li>
+            </ul>
+          </div>
+
+          <div class="footer-col">
+            <h4 class="footer-title">Company</h4>
+            <ul class="footer-links">
+              <li><a href="#">About Us</a></li>
+              <li><a href="#">Privacy Policy</a></li>
+              <li><a href="#">Terms of Service</a></li>
+              <li><a href="#">Contact Us</a></li>
+            </ul>
+          </div>
+
+          <div class="footer-col">
+            <h4 class="footer-title">Contact</h4>
+            <ul class="footer-contact">
+              <li><i class="fas fa-envelope"></i> support@medicsense.ai</li>
+              <li><i class="fas fa-phone"></i> 1800-XXX-XXXX</li>
+              <li>
+                <i class="fas fa-map-marker-alt"></i> Healthcare Innovation Hub
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="footer-bottom">
+          <p>
+            &copy; 2025 MedicSense AI. All rights reserved. Powered by Google
+            Gemini.
+          </p>
+          <p class="disclaimer">
+            ⚠️ This is an AI assistant and does not replace professional medical
+            advice
+          </p>
+        </div>
+      </div>
+    </footer>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay" style="display: none">
+      <div class="loading-content">
+        <div class="loader"></div>
+        <p class="loading-text">Processing with AI...</p>
+      </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="script_pro.js"></script>
+  </body>
+</html>

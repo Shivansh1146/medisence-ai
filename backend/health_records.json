@@ -1,0 +1,15 @@
+{
+  "test_user": {
+    "symptom_history": [
+      {
+        "timestamp": "2025-12-20T11:44:56.252147",
+        "symptoms": [
+          "fever"
+        ],
+        "severity": 2
+      }
+    ],
+    "medication_history": [],
+    "vital_signs": []
+  }
+}
