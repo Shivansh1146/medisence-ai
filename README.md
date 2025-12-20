@@ -65,7 +65,7 @@ You should see:
 
 ```
 🚀 MedicSense AI Backend Starting...
-📡 Server running at http://localhost:5000
+📡 Server running at http://localhost:3000
 💊 Medical chatbot ready to assist
 ```
 
@@ -86,7 +86,7 @@ Two options:
 2. Right-click `index.html`
 3. Select "Open with Live Server"
 
-The website will open at `http://localhost:5000` or similar.
+The website will open at `http://localhost:3000` or similar.
 
 ### Step 4: Start Using MedicSense AI! 🎉
 
@@ -204,7 +204,7 @@ pip install --upgrade flask flask-cors
 
 ### Frontend Not Connecting
 
-1. Ensure backend is running: `http://localhost:5000`
+1. Ensure backend is running: `http://localhost:3000`
 2. Check browser console (F12) for errors
 3. Verify CORS is enabled in `app.py`
 
@@ -212,7 +212,7 @@ pip install --upgrade flask flask-cors
 
 1. Open browser console (F12)
 2. Check for network errors
-3. Verify backend URL: `http://localhost:5000/api/chat`
+3. Verify backend URL: `http://localhost:3000/api/chat`
 
 ## 🎓 Learning Resources
 

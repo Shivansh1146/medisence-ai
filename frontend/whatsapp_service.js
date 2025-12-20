@@ -21,7 +21,7 @@ const getWhatsAppConfig = () => {
     // Try to get from window.ENV (loaded by env-loader.js)
     if (window.ENV && window.ENV.WHATSAPP) {
         return {
-            API_BASE_URL: window.ENV.API_BASE_URL || "http://localhost:5000/api",
+            API_BASE_URL: window.ENV.API_BASE_URL || "http://localhost:3000/api",
             DOCTOR_Aakash: window.ENV.WHATSAPP.DOCTOR_Aakash || {
                 name: "Dr. Aakash Singh Rajput",
                 phone: "+91 9770064169",
@@ -32,7 +32,7 @@ const getWhatsAppConfig = () => {
     
     // Fallback to default values
     return {
-        API_BASE_URL: "http://localhost:5000/api",
+        API_BASE_URL: "http://localhost:3000/api",
         DOCTOR_Aakash: {
             name: "Dr. Aakash Singh Rajput",
             phone: "+91 9770064169",

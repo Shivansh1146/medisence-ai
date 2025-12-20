@@ -350,7 +350,7 @@
 
         <div class="notifications-section">
             <h2><i class="fas fa-list"></i> All Notifications</h2>
-            
+
             <div class="filter-tabs">
                 <button class="filter-tab active" onclick="filterNotifications('all')">All</button>
                 <button class="filter-tab" onclick="filterNotifications('unread')">Unread</button>
@@ -369,11 +369,12 @@
         </div>
     </div>
 
+    <script src="env-config.js"></script>
     <script type="module">
         import { auth, onAuthStateChanged } from './firebase_config.js';
 
         const CONFIG = {
-            API_BASE_URL: "http://localhost:5000/api"
+            API_BASE_URL: (window.ENV && window.ENV.API_BASE_URL) || "http://localhost:3000/api"
         };
 
         let currentUser = null;
@@ -430,7 +431,7 @@
 
         function displayNotifications() {
             const listElement = document.getElementById('notificationsList');
-            
+
             // Filter notifications based on current filter
             let filteredNotifications = allNotifications;
             if (currentFilter === 'unread') {
@@ -565,13 +566,13 @@
 
         function filterNotifications(filter) {
             currentFilter = filter;
-            
+
             // Update filter tabs
             document.querySelectorAll('.filter-tab').forEach(tab => {
                 tab.classList.remove('active');
             });
             event.target.classList.add('active');
-            
+
             displayNotifications();
         }
 
@@ -592,4 +593,3 @@
     </script>
 </body>
 </html>
-

@@ -11,6 +11,13 @@
   <meta name="description"
     content="AI-powered symptom checking, automated appointment scheduling, and intelligent patient engagement with NLP" />
 
+  <!-- PWA Meta Tags -->
+  <meta name="theme-color" content="#667eea" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="MedicSense AI" />
+  <link rel="manifest" href="/manifest.json" />
+
   <!-- Fonts - Ultra Professional -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -20,7 +27,7 @@
 
   <!-- Icons - Multiple Libraries -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-  <link href="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.css" rel="stylesheet" />
+
 
   <!-- Animate.css for Advanced Animations -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
@@ -1261,7 +1268,7 @@
   <!-- Environment Variables - Load before other scripts -->
   <!-- Env Config (generated from .env by load-env.js) - Must load first -->
   <script src="env-config.js"></script>
-  <script src="env-loader.js" type="module"></script>
+
   <!-- Auth Scripts -->
   <script type="module" src="firebase_config.js"></script>
   <script type="module" src="auth_logic.js"></script>
@@ -1292,7 +1299,59 @@
         const today = new Date().toISOString().split("T")[0];
         dateInput.min = today;
       }
+
+      // Register Service Worker for PWA
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js')
+          .then((registration) => {
+            console.log('Service Worker registered:', registration);
+          })
+          .catch((error) => {
+            console.log('Service Worker registration failed:', error);
+          });
+      }
+
+      // Check login status
+      checkLoginStatus();
     });
+
+    // Check if user is logged in
+    async function checkLoginStatus() {
+      const token = localStorage.getItem('auth_token');
+      const sessionId = localStorage.getItem('session_id');
+
+      if (token || sessionId) {
+        try {
+          const apiUrl = window.ENV?.API_BASE_URL || 'http://localhost:3000/api';
+          const response = await fetch(`${apiUrl}/auth/verify`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token, sessionId })
+          });
+
+          const data = await response.json();
+          if (data.success && data.user) {
+            updateAuthUI(data.user);
+          } else {
+            // Invalid session, clear storage
+            localStorage.removeItem('auth_token');
+            localStorage.removeItem('session_id');
+            localStorage.removeItem('user_data');
+          }
+        } catch (error) {
+          console.error('Error checking login status:', error);
+        }
+      }
+    }
+
+    // Update UI based on auth status
+    function updateAuthUI(user) {
+      const authBtn = document.getElementById('authBtn');
+      if (authBtn && user) {
+        authBtn.innerHTML = '<i class="fas fa-user-check"></i>';
+        authBtn.title = `Logged in as ${user.name || user.email || user.phone}`;
+      }
+    }
   </script>
 </body>
 

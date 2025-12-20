@@ -15,6 +15,8 @@ from gemini_service import gemini_service
 from otp_service import otp_service
 from severity_classifier import SeverityClassifier
 from symptom_analyzer import SymptomAnalyzer
+from database import db
+from auth_manager import auth_manager
 
 app = Flask(__name__)
 CORS(app)  # Allow frontend to communicate
@@ -37,16 +39,21 @@ FAMILY_DOCTOR_FILE = "family_doctor.json"
 @app.route("/")
 def home():
     """Serve frontend files"""
-    return send_from_directory("..", "index.html")
+    return send_from_directory("../frontend", "index.html")
 
 
 @app.route("/<path:path>")
 def serve_frontend(path):
     """Serve other frontend files"""
-    # Ignore api routes
+    # Skip api routes - they are handled by other endpoints
     if path.startswith("api/"):
-        return None
-    return send_from_directory("..", path)
+        from flask import abort
+
+        abort(404)
+    try:
+        return send_from_directory("../frontend", path)
+    except:
+        return send_from_directory("../frontend", "index.html")
 
 
 @app.route("/api/chat", methods=["POST"])
@@ -528,7 +535,7 @@ def generate_medical_response_llm(message, symptoms, severity, user_id):
 
 # Authentication Endpoints
 @app.route("/api/auth/send-otp", methods=["POST"])
-def send_otp():
+def send_otp_simple():
     """Send OTP to phone number"""
     data = request.json
     phone = data.get("phone")
@@ -552,7 +559,7 @@ def send_otp():
 
 
 @app.route("/api/auth/verify-otp", methods=["POST"])
-def verify_otp():
+def verify_otp_simple():
     """Verify OTP and login"""
     data = request.json
     phone = data.get("phone")
@@ -600,28 +607,31 @@ def chat_message():
         # Analyze symptoms
         symptoms = analyzer.extract_symptoms(message)
         severity = classifier.classify(message, symptoms)
-        
+
         # Generate AI-powered response using Gemini for disease recognition
         ai_response = gemini_service.chat_medical(message, symptoms, severity)
-        
+
         return jsonify(
             {
-                "success": True, 
-                "response": ai_response, 
-                "severity": severity, 
+                "success": True,
+                "response": ai_response,
+                "severity": severity,
                 "context": "medical",
-                "symptoms": symptoms
+                "symptoms": symptoms,
             }
         )
     except Exception as e:
-        return jsonify(
-            {
-                "success": False,
-                "response": "I encountered an error. Please try again.",
-                "severity": 0,
-                "context": "error"
-            }
-        ), 500
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "response": "I encountered an error. Please try again.",
+                    "severity": 0,
+                    "context": "error",
+                }
+            ),
+            500,
+        )
 
 
 @app.route("/api/chat/history/<user_id>", methods=["GET"])
@@ -712,17 +722,19 @@ def record_symptoms():
 # Appointments Endpoints
 APPOINTMENTS_FILE = "appointments.json"
 
+
 @app.route("/api/appointments/book", methods=["POST"])
 def book_appointment():
     """Book an appointment and save to database"""
     try:
         data = request.json
         user_id = data.get("userId", "anonymous")
-        
+
         # Generate appointment ID
         import uuid
+
         appointment_id = f"APT{uuid.uuid4().hex[:8].upper()}"
-        
+
         # Create appointment object
         appointment = {
             "id": appointment_id,
@@ -738,7 +750,7 @@ def book_appointment():
             "status": "confirmed",
             "created_at": datetime.datetime.now().isoformat(),
         }
-        
+
         # Load existing appointments
         appointments = []
         if os.path.exists(APPOINTMENTS_FILE):
@@ -747,14 +759,14 @@ def book_appointment():
                     appointments = json.load(f)
             except:
                 appointments = []
-        
+
         # Add new appointment
         appointments.append(appointment)
-        
+
         # Save to file
         with open(APPOINTMENTS_FILE, "w") as f:
             json.dump(appointments, f, indent=2)
-        
+
         # Send WhatsApp notification if appointment is for Dr. Aakash
         if appointment.get("doctorId") == "dr_aakash":
             try:
@@ -762,7 +774,7 @@ def book_appointment():
             except Exception as e:
                 print(f"⚠️  WhatsApp notification failed: {e}")
                 # Don't fail the appointment booking if WhatsApp fails
-        
+
         return jsonify(
             {
                 "success": True,
@@ -772,12 +784,15 @@ def book_appointment():
             }
         )
     except Exception as e:
-        return jsonify(
-            {
-                "success": False,
-                "message": f"Error booking appointment: {str(e)}",
-            }
-        ), 500
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "message": f"Error booking appointment: {str(e)}",
+                }
+            ),
+            500,
+        )
 
 
 @app.route("/api/appointments/<user_id>", methods=["GET"])
@@ -791,12 +806,11 @@ def get_appointments(user_id):
                     all_appointments = json.load(f)
                     # Filter by user_id
                     appointments = [
-                        apt for apt in all_appointments 
-                        if apt.get("userId") == user_id
+                        apt for apt in all_appointments if apt.get("userId") == user_id
                     ]
             except:
                 appointments = []
-        
+
         return jsonify(
             {
                 "success": True,
@@ -804,13 +818,16 @@ def get_appointments(user_id):
             }
         )
     except Exception as e:
-        return jsonify(
-            {
-                "success": False,
-                "message": f"Error fetching appointments: {str(e)}",
-                "data": [],
-            }
-        ), 500
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "message": f"Error fetching appointments: {str(e)}",
+                    "data": [],
+                }
+            ),
+            500,
+        )
 
 
 @app.route("/api/appointments/<appointment_id>/cancel", methods=["PUT"])
@@ -1121,6 +1138,16 @@ def resend_otp():
         return jsonify({"success": False, "message": str(e)}), 500
 
 
+
+# ================================
+# NOTIFICATION ENDPOINTS
+# ================================
+
+
+
+
+
+
 # ================================
 # WHATSAPP NOTIFICATION ENDPOINTS
 # ================================
@@ -1130,32 +1157,35 @@ def send_whatsapp_notification(appointment):
     """Send WhatsApp notification to doctor"""
     try:
         from dotenv import load_dotenv
+
         load_dotenv()
-        
+
         account_sid = os.getenv("TWILIO_ACCOUNT_SID")
         auth_token = os.getenv("TWILIO_AUTH_TOKEN")
         whatsapp_number = os.getenv("TWILIO_WHATSAPP_NUMBER")
-        
+
         # Check if Twilio is configured
         if not account_sid or not auth_token or not whatsapp_number:
             print("⚠️  Twilio not configured. Add credentials to .env file")
             return {"success": False, "message": "Twilio not configured"}
-        
+
         try:
             from twilio.rest import Client
         except ImportError:
             print("⚠️  Twilio SDK not installed. Run: pip install twilio")
             return {"success": False, "message": "Twilio SDK not installed"}
-        
+
         # Doctor WhatsApp number
         doctor_whatsapp = "+919770064169"  # Dr. Aakash Singh Rajput
-        
+
         # Format message
         try:
-            date_str = datetime.datetime.fromisoformat(appointment["date"]).strftime("%B %d, %Y")
+            date_str = datetime.datetime.fromisoformat(appointment["date"]).strftime(
+                "%B %d, %Y"
+            )
         except:
             date_str = appointment["date"]
-        
+
         message = f"""🏥 *New Appointment Booking*
 
 👤 *Patient Details:*
@@ -1174,18 +1204,16 @@ Type: {appointment.get('type', 'In-Person')}
 🆔 Appointment ID: {appointment['id']}
 
 Please confirm this appointment."""
-        
+
         # Send WhatsApp message
         client = Client(account_sid, auth_token)
         message_obj = client.messages.create(
-            body=message,
-            from_=whatsapp_number,
-            to=f"whatsapp:{doctor_whatsapp}"
+            body=message, from_=whatsapp_number, to=f"whatsapp:{doctor_whatsapp}"
         )
-        
+
         print(f"✅ WhatsApp notification sent to Dr. Aakash: {message_obj.sid}")
         return {"success": True, "message_sid": message_obj.sid}
-        
+
     except Exception as e:
         print(f"❌ WhatsApp notification error: {e}")
         return {"success": False, "error": str(e)}
@@ -1199,50 +1227,61 @@ def send_whatsapp():
         to_number = data.get("to", "").strip()
         message_text = data.get("message", "")
         doctor_name = data.get("doctor_name", "Doctor")
-        
+
         if not to_number or not message_text:
-            return jsonify(
-                {"success": False, "message": "Phone number and message are required"}
-            ), 400
-        
+            return (
+                jsonify(
+                    {
+                        "success": False,
+                        "message": "Phone number and message are required",
+                    }
+                ),
+                400,
+            )
+
         from dotenv import load_dotenv
+
         load_dotenv()
-        
+
         account_sid = os.getenv("TWILIO_ACCOUNT_SID")
         auth_token = os.getenv("TWILIO_AUTH_TOKEN")
         whatsapp_number = os.getenv("TWILIO_WHATSAPP_NUMBER")
-        
+
         if not account_sid or not auth_token or not whatsapp_number:
-            return jsonify(
-                {
-                    "success": False,
-                    "message": "Twilio not configured. Please add credentials to .env file",
-                    "setup_required": True,
-                }
-            ), 500
-        
+            return (
+                jsonify(
+                    {
+                        "success": False,
+                        "message": "Twilio not configured. Please add credentials to .env file",
+                        "setup_required": True,
+                    }
+                ),
+                500,
+            )
+
         try:
             from twilio.rest import Client
         except ImportError:
-            return jsonify(
-                {
-                    "success": False,
-                    "message": "Twilio SDK not installed. Run: pip install twilio",
-                }
-            ), 500
-        
+            return (
+                jsonify(
+                    {
+                        "success": False,
+                        "message": "Twilio SDK not installed. Run: pip install twilio",
+                    }
+                ),
+                500,
+            )
+
         # Format phone number (ensure it starts with whatsapp:)
         if not to_number.startswith("whatsapp:"):
             to_number = f"whatsapp:{to_number}"
-        
+
         # Send message
         client = Client(account_sid, auth_token)
         message = client.messages.create(
-            body=message_text,
-            from_=whatsapp_number,
-            to=to_number
+            body=message_text, from_=whatsapp_number, to=to_number
         )
-        
+
         return jsonify(
             {
                 "success": True,
@@ -1251,19 +1290,52 @@ def send_whatsapp():
                 "to": to_number,
             }
         )
-        
+
     except Exception as e:
-        return jsonify(
-            {
-                "success": False,
-                "message": f"Error sending WhatsApp: {str(e)}",
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "message": f"Error sending WhatsApp: {str(e)}",
+                }
+            ),
+            500,
+        )
+
+
+@app.route("/api/auth/login", methods=["POST"])
+def login_email():
+    """Mock Email Login"""
+    try:
+        data = request.json
+        email = data.get("email", "").strip()
+        password = data.get("password", "").strip()
+
+        if not email or not password:
+             return jsonify({"success": False, "message": "Email and password required"}), 400
+
+        # Mock authentication (accept any password for demo)
+        import uuid
+        user_id = "user_" + str(uuid.uuid4())[:8]
+
+        return jsonify({
+            "success": True,
+            "token": f"mock_token_{user_id}",
+            "sessionId": f"session_{user_id}",
+            "user": {
+                "id": user_id,
+                "name": email.split("@")[0],
+                "email": email,
+                "photoURL": "https://ui-avatars.com/api/?name=" + email.split("@")[0]
             }
-        ), 500
+        })
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500
 
 
 if __name__ == "__main__":
     print("🚀 MedicSense AI Backend Starting...")
-    print("📡 Server running at http://localhost:5000")
+    print("📡 Server running at http://localhost:3000")
     print("💊 Medical chatbot ready to assist")
     print("🤖 AI-powered responses enabled")
     print("📸 Image analysis ready")

@@ -12,17 +12,17 @@ const getConfig = () => {
   // Try to get from window.ENV (loaded by env-loader.js)
   if (window.ENV) {
     return {
-      API_BASE_URL: window.ENV.API_BASE_URL || "http://localhost:5000/api",
+      API_BASE_URL: window.ENV.API_BASE_URL || "http://localhost:3000/api",
       USER_ID: "user_" + Math.random().toString(36).substr(2, 9),
       AI_ENABLED: window.ENV.APP?.AI_ENABLED !== undefined ? window.ENV.APP.AI_ENABLED : true,
       MAX_FILE_SIZE: window.ENV.APP?.MAX_FILE_SIZE || 10 * 1024 * 1024, // 10MB
       SUPPORTED_FORMATS: window.ENV.APP?.SUPPORTED_FORMATS || ["image/jpeg", "image/png", "image/webp"],
     };
   }
-  
+
   // Fallback to default values
   return {
-    API_BASE_URL: "http://localhost:5000/api",
+    API_BASE_URL: "http://localhost:3000/api",
     USER_ID: "user_" + Math.random().toString(36).substr(2, 9),
     AI_ENABLED: true,
     MAX_FILE_SIZE: 10 * 1024 * 1024, // 10MB
@@ -284,7 +284,7 @@ function displaySymptomResults(analysis, severity) {
         </div>
         <div class="analysis-content">
             <h4><i class="fas fa-brain"></i> AI Analysis</h4>
-            <div class="analysis-text">${marked.parse(analysis)}</div>
+            <div class="analysis-text">${typeof marked !== 'undefined' ? marked.parse(analysis) : analysis.replace(/\n/g, '<br>')}</div>
         </div>
         <div class="recommendations">
             <h4><i class="fas fa-lightbulb"></i> Recommendations</h4>
@@ -374,7 +374,7 @@ function useVoiceInput(type) {
 // ========================================
 // APPOINTMENT FUNCTIONS
 // ========================================
-function loadAvailableSlots() {
+async function loadAvailableSlots() {
   const doctorSelect = document.getElementById("doctorSelect");
   const dateInput = document.getElementById("appointmentDate");
   const timeSelect = document.getElementById("appointmentTime");
@@ -388,44 +388,94 @@ function loadAvailableSlots() {
     return;
   }
 
-  // Generate mock time slots
-  const slots = [
-    "09:00 AM",
-    "09:30 AM",
-    "10:00 AM",
-    "10:30 AM",
-    "11:00 AM",
-    "11:30 AM",
-    "02:00 PM",
-    "02:30 PM",
-    "03:00 PM",
-    "03:30 PM",
-    "04:00 PM",
-    "04:30 PM",
-  ];
+  try {
+    // Call API to get available slots
+    const response = await fetch(`${CONFIG.API_BASE_URL}/appointments/slots?doctor=${encodeURIComponent(doctorSelect.value)}&date=${encodeURIComponent(dateInput.value)}`);
+    const data = await response.json();
 
-  // Update time select
-  if (timeSelect) {
-    timeSelect.innerHTML = '<option value="">Select time slot</option>';
-    slots.forEach((slot) => {
-      const option = document.createElement("option");
-      option.value = slot;
-      option.textContent = slot;
-      timeSelect.appendChild(option);
-    });
-  }
+    let slots = [];
+    if (data.success && data.slots && data.slots.length > 0) {
+      slots = data.slots;
+    } else {
+      // Fallback to mock slots if API fails
+      slots = [
+        "09:00",
+        "09:30",
+        "10:00",
+        "10:30",
+        "11:00",
+        "11:30",
+        "14:00",
+        "14:30",
+        "15:00",
+        "15:30",
+        "16:00",
+        "16:30",
+      ];
+    }
 
-  // Update slots grid
-  if (slotsGrid) {
-    slotsGrid.innerHTML = slots
-      .map(
-        (slot) => `
+    // Update time select
+    if (timeSelect) {
+      timeSelect.innerHTML = '<option value="">Select time slot</option>';
+      slots.forEach((slot) => {
+        const option = document.createElement("option");
+        option.value = slot;
+        option.textContent = slot;
+        timeSelect.appendChild(option);
+      });
+    }
+
+    // Update slots grid
+    if (slotsGrid) {
+      slotsGrid.innerHTML = slots
+        .map(
+          (slot) => `
             <button class="slot-btn available" onclick="selectSlot('${slot}')">
                 ${slot}
             </button>
         `
-      )
-      .join("");
+        )
+        .join("");
+    }
+  } catch (error) {
+    console.error("Error loading slots:", error);
+    // Fallback to mock slots on error
+    const slots = [
+      "09:00",
+      "09:30",
+      "10:00",
+      "10:30",
+      "11:00",
+      "11:30",
+      "14:00",
+      "14:30",
+      "15:00",
+      "15:30",
+      "16:00",
+      "16:30",
+    ];
+
+    if (timeSelect) {
+      timeSelect.innerHTML = '<option value="">Select time slot</option>';
+      slots.forEach((slot) => {
+        const option = document.createElement("option");
+        option.value = slot;
+        option.textContent = slot;
+        timeSelect.appendChild(option);
+      });
+    }
+
+    if (slotsGrid) {
+      slotsGrid.innerHTML = slots
+        .map(
+          (slot) => `
+            <button class="slot-btn available" onclick="selectSlot('${slot}')">
+                ${slot}
+            </button>
+        `
+        )
+        .join("");
+    }
   }
 }
 
@@ -519,6 +569,7 @@ async function bookAppointment() {
       saveUserData();
 
       // Send WhatsApp notification if appointment is for Dr. Aakash
+      /* Redundant - Backend handles this
       if (doctor === 'dr_aakash') {
         try {
           // Import and use WhatsApp service
@@ -528,6 +579,7 @@ async function bookAppointment() {
           console.log('WhatsApp notification not sent (service may not be configured):', error);
         }
       }
+      */
 
       // Show success
       showToast(
@@ -623,12 +675,20 @@ async function sendChatMessage(quickMessage = null) {
   showTypingIndicator();
 
   try {
+    // Get or create session ID for AI agent scaling
+    let sessionId = localStorage.getItem('chat_session_id');
+    if (!sessionId) {
+      sessionId = `chat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      localStorage.setItem('chat_session_id', sessionId);
+    }
+
     const response = await fetch(`${CONFIG.API_BASE_URL}/chat`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         message: message,
         user_id: state.currentUser,
+        session_id: sessionId,
       }),
     });
 
@@ -700,7 +760,7 @@ function addMessageToChat(role, content, metadata = {}) {
       <img src="${metadata.image}" alt="Uploaded image" style="max-width: 100%; border-radius: 8px; margin-top: 8px; max-height: 300px; object-fit: contain;">
     `;
   } else if (role === "ai") {
-    bubbleDiv.innerHTML = marked.parse(content);
+    bubbleDiv.innerHTML = typeof marked !== 'undefined' ? marked.parse(content) : content.replace(/\n/g, '<br>');
   } else {
     bubbleDiv.textContent = content;
   }
@@ -869,9 +929,9 @@ async function handleChatImageUpload(event) {
       const imageDataUrl = e.target.result;
 
       // Add user message showing image was uploaded
-      addMessageToChat("user", "📸 [Image uploaded for analysis]", { 
+      addMessageToChat("user", "📸 [Image uploaded for analysis]", {
         context: "image-upload",
-        image: imageDataUrl 
+        image: imageDataUrl
       });
 
       // Show typing indicator
@@ -896,7 +956,7 @@ async function handleChatImageUpload(event) {
           // Format the Gemini AI response with disease recognition
           let analysisMessage = `📸 **Disease Recognition & Image Analysis**\n\n`;
           analysisMessage += `**Primary Condition:** ${data.injury_type || 'Not specified'}\n`;
-          
+
           if (data.possible_conditions && data.possible_conditions.length > 0) {
             analysisMessage += `**Possible Conditions:**\n`;
             data.possible_conditions.forEach((condition, idx) => {
@@ -904,11 +964,11 @@ async function handleChatImageUpload(event) {
             });
             analysisMessage += `\n`;
           }
-          
+
           analysisMessage += `**Severity:** ${data.severity || 'Not specified'}\n`;
           analysisMessage += `**Confidence:** ${data.confidence || 0}%\n\n`;
           analysisMessage += `**Visual Description:**\n${data.description || 'No description available'}\n\n`;
-          
+
           if (data.disease_characteristics && data.disease_characteristics.length > 0) {
             analysisMessage += `**Disease Characteristics:**\n`;
             data.disease_characteristics.forEach((char, idx) => {
@@ -916,7 +976,7 @@ async function handleChatImageUpload(event) {
             });
             analysisMessage += `\n`;
           }
-          
+
           if (data.cure_steps && data.cure_steps.length > 0) {
             analysisMessage += `**Care Instructions:**\n`;
             data.cure_steps.forEach((step, idx) => {
@@ -941,7 +1001,7 @@ async function handleChatImageUpload(event) {
             analysisMessage += `**Medical Advice:**\n${data.medical_advice}\n`;
           }
 
-          addMessageToChat("ai", analysisMessage, { 
+          addMessageToChat("ai", analysisMessage, {
             context: "image-analysis",
             severity: data.severity,
             injury_type: data.injury_type
@@ -953,8 +1013,8 @@ async function handleChatImageUpload(event) {
       } catch (error) {
         hideTypingIndicator();
         console.error("Error analyzing image:", error);
-        addMessageToChat("ai", "❌ Sorry, I encountered an error analyzing the image. Please try again.", { 
-          context: "error" 
+        addMessageToChat("ai", "❌ Sorry, I encountered an error analyzing the image. Please try again.", {
+          context: "error"
         });
         showToast("Error analyzing image. Please try again.", "error");
       }
@@ -1176,6 +1236,16 @@ window.addEventListener("load", function () {
     const pageLoadTime = perfData.loadEventEnd - perfData.navigationStart;
     console.log(`⚡ Page Load Time: ${pageLoadTime}ms`);
   }, 0);
+});
+
+// Auth functions are handled in auth_logic.js
+
+// Close auth modal on outside click
+document.addEventListener("click", function(event) {
+  const authModal = document.getElementById("authModal");
+  if (authModal && event.target === authModal) {
+    closeAuthModal();
+  }
 });
 
 // ========================================
