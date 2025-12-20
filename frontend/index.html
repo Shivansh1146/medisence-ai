@@ -237,9 +237,9 @@
 
         <!-- User Actions -->
         <div class="nav-actions">
-          <button class="icon-btn notification-btn" onclick="showNotifications()">
+          <button class="icon-btn notification-btn" onclick="window.location.href='notifications.html'">
             <i class="fas fa-bell"></i>
-            <span class="badge">3</span>
+            <span class="badge" id="notificationBadge">0</span>
           </button>
 
           <!-- Auth Button -->
@@ -282,6 +282,9 @@
         </li>
         <li>
           <a href="#reports" onclick="toggleMobileMenu()"><i class="fas fa-file-medical"></i> Reports</a>
+        </li>
+        <li>
+          <a href="notifications.html" onclick="toggleMobileMenu()"><i class="fas fa-bell"></i> Notifications</a>
         </li>
       </ul>
     </div>
@@ -728,6 +731,8 @@
             <label><i class="fas fa-user-md"></i> Doctor / Department</label>
             <select id="doctorSelect" class="form-control" onchange="loadAvailableSlots()">
               <option value="">Select doctor or department</option>
+              <option value="dr_tushar">Dr. Tushar ZX (Devfest Noida)</option>
+              <option value="dr_aakash">Dr. Aakash Singh Rajput</option>
               <option value="dr_sharma">
                 Dr. Sharma - General Physician
               </option>
@@ -1253,9 +1258,15 @@
   <!-- Scripts -->
   <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <!-- Environment Variables - Load before other scripts -->
+  <!-- Env Config (generated from .env by load-env.js) - Must load first -->
+  <script src="env-config.js"></script>
+  <script src="env-loader.js" type="module"></script>
   <!-- Auth Scripts -->
   <script type="module" src="firebase_config.js"></script>
   <script type="module" src="auth_logic.js"></script>
+  <!-- WhatsApp Service -->
+  <script type="module" src="whatsapp_service.js"></script>
 
   <script src="script_ultra.js"></script>
 

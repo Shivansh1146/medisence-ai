@@ -44,6 +44,17 @@
             "experience": "10 years",
             "contact": "+1-555-0105",
             "available": "Mon-Sat, 8AM-6PM"
+        },
+        {
+            "id": 6,
+            "name": "Dr. Aakash Singh Rajput",
+            "specialization": "General Physician",
+            "city": "India",
+            "experience": "5+ years",
+            "contact": "+91 9770064169",
+            "whatsapp": "+91 9770064169",
+            "available": "Mon-Sat, 9AM-7PM",
+            "whatsapp_enabled": true
         }
     ],
     "hospitals": [

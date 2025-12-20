@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up / Login - MedicSense AI</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style_ultra.css">
+    <style>
+        .auth-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 2rem;
+        }
+        .auth-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 450px;
+            padding: 3rem;
+            animation: slideUp 0.5s ease;
+        }
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .auth-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .auth-header h1 {
+            color: #1e293b;
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        .auth-header p {
+            color: #64748b;
+            font-size: 0.95rem;
+        }
+        .auth-tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        .auth-tab {
+            flex: 1;
+            padding: 1rem;
+            text-align: center;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            color: #64748b;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+        }
+        .auth-tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+        .auth-tab:hover {
+            color: #667eea;
+        }
+        .auth-form {
+            display: none;
+        }
+        .auth-form.active {
+            display: block;
+        }
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #1e293b;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.3s;
+            box-sizing: border-box;
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        .phone-input-group {
+            display: flex;
+            gap: 0.5rem;
+        }
+        .phone-input-group select {
+            flex: 0 0 80px;
+            padding: 0.875rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 1rem;
+        }
+        .phone-input-group input {
+            flex: 1;
+        }
+        .btn-auth {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 1rem;
+        }
+        .btn-auth:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        .btn-auth:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .btn-google {
+            width: 100%;
+            padding: 0.875rem;
+            background: white;
+            color: #1e293b;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            transition: all 0.3s;
+            margin-bottom: 1.5rem;
+        }
+        .btn-google:hover {
+            border-color: #cbd5e1;
+            background: #f8fafc;
+        }
+        .divider {
+            text-align: center;
+            margin: 1.5rem 0;
+            position: relative;
+        }
+        .divider::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            width: 100%;
+            height: 1px;
+            background: #e2e8f0;
+        }
+        .divider span {
+            background: white;
+            padding: 0 1rem;
+            color: #94a3b8;
+            position: relative;
+        }
+        .error-message {
+            background: #fee2e2;
+            color: #dc2626;
+            padding: 0.75rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            margin-bottom: 1rem;
+            display: none;
+        }
+        .error-message.show {
+            display: block;
+        }
+        .success-message {
+            background: #d1fae5;
+            color: #059669;
+            padding: 0.75rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            margin-bottom: 1rem;
+            display: none;
+        }
+        .success-message.show {
+            display: block;
+        }
+        .otp-section {
+            display: none;
+        }
+        .otp-section.active {
+            display: block;
+        }
+        .otp-input-group {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .otp-input-group input {
+            flex: 1;
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: 600;
+            letter-spacing: 0.5rem;
+        }
+        .back-link {
+            text-align: center;
+            margin-top: 1.5rem;
+        }
+        .back-link a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .back-link a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <h1><i class="fas fa-heartbeat"></i> MedicSense AI</h1>
+                <p>Sign up or login to access your health dashboard</p>
+            </div>
+
+            <div class="auth-tabs">
+                <button class="auth-tab active" onclick="switchTab('login')">Login</button>
+                <button class="auth-tab" onclick="switchTab('signup')">Sign Up</button>
+            </div>
+
+            <!-- Error/Success Messages -->
+            <div class="error-message" id="errorMessage"></div>
+            <div class="success-message" id="successMessage"></div>
+
+            <!-- Login Form -->
+            <form class="auth-form active" id="loginForm" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label><i class="fas fa-envelope"></i> Email</label>
+                    <input type="email" id="loginEmail" placeholder="your@email.com" required>
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-phone"></i> Phone Number</label>
+                    <div class="phone-input-group">
+                        <select id="loginPhoneCode">
+                            <option value="+91">+91</option>
+                            <option value="+1">+1</option>
+                            <option value="+44">+44</option>
+                        </select>
+                        <input type="tel" id="loginPhone" placeholder="XXXXXXXXXX" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-lock"></i> Password</label>
+                    <input type="password" id="loginPassword" placeholder="Enter your password" required>
+                </div>
+                <button type="submit" class="btn-auth" id="loginBtn">
+                    <i class="fas fa-sign-in-alt"></i> Login
+                </button>
+            </form>
+
+            <!-- Sign Up Form -->
+            <form class="auth-form" id="signupForm" onsubmit="handleSignup(event)">
+                <div class="form-group">
+                    <label><i class="fas fa-user"></i> Full Name</label>
+                    <input type="text" id="signupName" placeholder="John Doe" required>
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-envelope"></i> Email</label>
+                    <input type="email" id="signupEmail" placeholder="your@email.com" required>
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-phone"></i> Phone Number</label>
+                    <div class="phone-input-group">
+                        <select id="signupPhoneCode">
+                            <option value="+91">+91</option>
+                            <option value="+1">+1</option>
+                            <option value="+44">+44</option>
+                        </select>
+                        <input type="tel" id="signupPhone" placeholder="XXXXXXXXXX" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-lock"></i> Password</label>
+                    <input type="password" id="signupPassword" placeholder="Create a password" required minlength="6">
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-lock"></i> Confirm Password</label>
+                    <input type="password" id="signupConfirmPassword" placeholder="Confirm your password" required>
+                </div>
+                <button type="submit" class="btn-auth" id="signupBtn">
+                    <i class="fas fa-user-plus"></i> Sign Up
+                </button>
+            </form>
+
+            <!-- OTP Verification Section -->
+            <div class="otp-section" id="otpSection">
+                <div class="form-group">
+                    <label><i class="fas fa-key"></i> Enter OTP</label>
+                    <p style="color: #64748b; font-size: 0.875rem; margin-bottom: 1rem;">
+                        We've sent a 6-digit OTP to your phone number
+                    </p>
+                    <div class="otp-input-group">
+                        <input type="text" id="otpInput" maxlength="6" placeholder="000000" required>
+                    </div>
+                    <button type="button" class="btn-auth" onclick="verifyOTP()">
+                        <i class="fas fa-check"></i> Verify OTP
+                    </button>
+                    <button type="button" class="btn-auth" style="background: #64748b; margin-top: 0.5rem;" onclick="resendOTP()">
+                        <i class="fas fa-redo"></i> Resend OTP
+                    </button>
+                </div>
+            </div>
+
+            <div class="divider">
+                <span>OR</span>
+            </div>
+
+            <button class="btn-google" onclick="handleGoogleAuth()">
+                <i class="fab fa-google"></i> Continue with Google
+            </button>
+
+            <div class="back-link">
+                <a href="index.html"><i class="fas fa-arrow-left"></i> Back to Home</a>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="firebase_config.js"></script>
+    <script type="module" src="auth_logic.js"></script>
+    <script>
+        let currentPhone = '';
+        let currentPhoneCode = '';
+
+        function switchTab(tab) {
+            // Update tabs
+            document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+
+            // Update forms
+            document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
+            document.getElementById(tab === 'login' ? 'loginForm' : 'signupForm').classList.add('active');
+
+            // Clear messages
+            hideMessages();
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            hideMessages();
+
+            const email = document.getElementById('loginEmail').value;
+            const phoneCode = document.getElementById('loginPhoneCode').value;
+            const phone = document.getElementById('loginPhone').value;
+            const password = document.getElementById('loginPassword').value;
+            const fullPhone = phoneCode + phone;
+
+            const btn = document.getElementById('loginBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Logging in...';
+
+            try {
+                // Try Firebase email/password login first
+                const { signInWithEmailAndPassword } = await import('./firebase_config.js');
+                const { auth } = await import('./firebase_config.js');
+                
+                try {
+                    await signInWithEmailAndPassword(auth, email, password);
+                    showSuccess('Login successful! Redirecting...');
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 1000);
+                } catch (firebaseError) {
+                    // If Firebase login fails, try phone OTP
+                    currentPhone = fullPhone;
+                    currentPhoneCode = phoneCode;
+                    await sendOTP(fullPhone);
+                }
+            } catch (error) {
+                showError('Login failed: ' + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Login';
+            }
+        }
+
+        async function handleSignup(e) {
+            e.preventDefault();
+            hideMessages();
+
+            const name = document.getElementById('signupName').value;
+            const email = document.getElementById('signupEmail').value;
+            const phoneCode = document.getElementById('signupPhoneCode').value;
+            const phone = document.getElementById('signupPhone').value;
+            const password = document.getElementById('signupPassword').value;
+            const confirmPassword = document.getElementById('signupConfirmPassword').value;
+            const fullPhone = phoneCode + phone;
+
+            if (password !== confirmPassword) {
+                showError('Passwords do not match');
+                return;
+            }
+
+            const btn = document.getElementById('signupBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Signing up...';
+
+            try {
+                // Try Firebase email/password signup
+                const { createUserWithEmailAndPassword, updateProfile } = await import('./firebase_config.js');
+                const { auth } = await import('./firebase_config.js');
+                
+                try {
+                    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                    await updateProfile(userCredential.user, { displayName: name });
+                    
+                    // Save phone number to user profile (you might want to use Firestore for this)
+                    showSuccess('Account created! Verifying phone number...');
+                    currentPhone = fullPhone;
+                    currentPhoneCode = phoneCode;
+                    await sendOTP(fullPhone);
+                } catch (firebaseError) {
+                    if (firebaseError.code === 'auth/email-already-in-use') {
+                        showError('Email already registered. Please login instead.');
+                    } else {
+                        throw firebaseError;
+                    }
+                }
+            } catch (error) {
+                showError('Signup failed: ' + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-user-plus"></i> Sign Up';
+            }
+        }
+
+        async function sendOTP(phone) {
+            try {
+                const response = await fetch('http://localhost:5000/api/auth/otp/send', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    showSuccess('OTP sent to your phone!');
+                    document.getElementById('otpSection').classList.add('active');
+                    document.getElementById('loginForm').classList.remove('active');
+                    document.getElementById('signupForm').classList.remove('active');
+                } else {
+                    showError(data.message || 'Failed to send OTP');
+                }
+            } catch (error) {
+                showError('Error sending OTP: ' + error.message);
+            }
+        }
+
+        async function verifyOTP() {
+            const otp = document.getElementById('otpInput').value;
+            if (otp.length !== 6) {
+                showError('Please enter a 6-digit OTP');
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:5000/api/auth/otp/verify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone: currentPhone, otp })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    showSuccess('Phone verified! Redirecting...');
+                    // Save user info to localStorage if available
+                    if (data.user) {
+                        localStorage.setItem('medicsense_user', JSON.stringify(data.user));
+                    }
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 1000);
+                } else {
+                    showError(data.message || 'Invalid OTP');
+                }
+            } catch (error) {
+                showError('Error verifying OTP: ' + error.message);
+            }
+        }
+
+        async function resendOTP() {
+            await sendOTP(currentPhone);
+        }
+
+        async function handleGoogleAuth() {
+            try {
+                const { signInWithPopup, auth, googleProvider } = await import('./firebase_config.js');
+                const result = await signInWithPopup(auth, googleProvider);
+                showSuccess('Login successful! Redirecting...');
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 1000);
+            } catch (error) {
+                showError('Google login failed: ' + error.message);
+            }
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.classList.add('show');
+            setTimeout(() => errorDiv.classList.remove('show'), 5000);
+        }
+
+        function showSuccess(message) {
+            const successDiv = document.getElementById('successMessage');
+            successDiv.textContent = message;
+            successDiv.classList.add('show');
+            setTimeout(() => successDiv.classList.remove('show'), 5000);
+        }
+
+        function hideMessages() {
+            document.getElementById('errorMessage').classList.remove('show');
+            document.getElementById('successMessage').classList.remove('show');
+        }
+    </script>
+</body>
+</html>
+

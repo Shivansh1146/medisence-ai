@@ -7,13 +7,30 @@
 // ========================================
 // CONFIGURATION
 // ========================================
-const CONFIG = {
-  API_BASE_URL: "http://localhost:5000/api",
-  USER_ID: "user_" + Math.random().toString(36).substr(2, 9),
-  AI_ENABLED: true,
-  MAX_FILE_SIZE: 10 * 1024 * 1024, // 10MB
-  SUPPORTED_FORMATS: ["image/jpeg", "image/png", "image/webp"],
+// Load configuration from environment variables
+const getConfig = () => {
+  // Try to get from window.ENV (loaded by env-loader.js)
+  if (window.ENV) {
+    return {
+      API_BASE_URL: window.ENV.API_BASE_URL || "http://localhost:5000/api",
+      USER_ID: "user_" + Math.random().toString(36).substr(2, 9),
+      AI_ENABLED: window.ENV.APP?.AI_ENABLED !== undefined ? window.ENV.APP.AI_ENABLED : true,
+      MAX_FILE_SIZE: window.ENV.APP?.MAX_FILE_SIZE || 10 * 1024 * 1024, // 10MB
+      SUPPORTED_FORMATS: window.ENV.APP?.SUPPORTED_FORMATS || ["image/jpeg", "image/png", "image/webp"],
+    };
+  }
+  
+  // Fallback to default values
+  return {
+    API_BASE_URL: "http://localhost:5000/api",
+    USER_ID: "user_" + Math.random().toString(36).substr(2, 9),
+    AI_ENABLED: true,
+    MAX_FILE_SIZE: 10 * 1024 * 1024, // 10MB
+    SUPPORTED_FORMATS: ["image/jpeg", "image/png", "image/webp"],
+  };
 };
+
+const CONFIG = getConfig();
 
 // ========================================
 // STATE MANAGEMENT
@@ -61,6 +78,9 @@ function initializeApp() {
     // Welcome message already in HTML
   }
 
+  // Load notification count
+  loadNotificationCount();
+
   // Set up smooth scroll
   document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
     anchor.addEventListener("click", function (e) {
@@ -98,8 +118,54 @@ function toggleSearch() {
 }
 
 function showNotifications() {
-  showToast("You have 3 new notifications", "info");
+  window.location.href = 'notifications.html';
 }
+
+// Load notification count on page load
+async function loadNotificationCount() {
+  try {
+    let userId = state.currentUser;
+    try {
+      const { auth } = await import('./firebase_config.js');
+      if (auth.currentUser) {
+        userId = auth.currentUser.uid;
+      }
+    } catch (e) {
+      console.log('Firebase not available, using default user ID');
+    }
+
+    const response = await fetch(`${CONFIG.API_BASE_URL}/notifications/${userId}`);
+    const data = await response.json();
+
+    if (data.success && data.data) {
+      const unreadCount = data.data.filter(n => !n.read).length;
+      const badge = document.getElementById('notificationBadge');
+      if (badge) {
+        if (unreadCount > 0) {
+          badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
+          badge.style.display = 'flex';
+        } else {
+          badge.textContent = '';
+          badge.style.display = 'none';
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error loading notification count:', error);
+    // Hide badge on error
+    const badge = document.getElementById('notificationBadge');
+    if (badge) {
+      badge.style.display = 'none';
+    }
+  }
+}
+
+// Refresh notification count periodically (every 30 seconds)
+setInterval(() => {
+  if (document.visibilityState === 'visible') {
+    loadNotificationCount();
+  }
+}, 30000);
 
 function closeAlert() {
   const alertBar = document.getElementById("alertBar");
@@ -403,44 +469,89 @@ async function bookAppointment() {
   showToast("Booking your appointment...", "info");
 
   try {
-    // In real implementation, this would call the backend API
-    const appointment = {
-      id: "apt_" + Date.now(),
-      name,
-      phone,
-      email,
-      doctor,
-      date,
-      time,
-      reason,
-      type,
-      status: "confirmed",
-      timestamp: new Date().toISOString(),
-    };
+    // Get user ID from Firebase auth or use default
+    let userId = state.currentUser;
+    try {
+      const { auth } = await import('./firebase_config.js');
+      if (auth.currentUser) {
+        userId = auth.currentUser.uid;
+      }
+    } catch (e) {
+      console.log('Firebase not available, using default user ID');
+    }
 
-    state.appointments.push(appointment);
-    saveUserData();
+    // Call backend API to book appointment
+    const response = await fetch(`${CONFIG.API_BASE_URL}/appointments/book`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userId: userId,
+        name,
+        phone,
+        email,
+        doctorId: doctor,
+        date,
+        time,
+        reason,
+        type,
+      }),
+    });
 
-    // Show success
-    showToast(
-      "Appointment booked successfully! Confirmation sent to your email.",
-      "success"
-    );
+    const data = await response.json();
 
-    // Reset form
-    document.getElementById("patientName").value = "";
-    document.getElementById("patientPhone").value = "";
-    document.getElementById("patientEmail").value = "";
-    document.getElementById("doctorSelect").value = "";
-    document.getElementById("appointmentDate").value = "";
-    document.getElementById("appointmentTime").value = "";
-    document.getElementById("appointmentReason").value = "";
+    if (data.success) {
+      const appointment = {
+        id: data.appointmentId || "apt_" + Date.now(),
+        name,
+        phone,
+        email,
+        doctor,
+        doctorId: doctor,
+        date,
+        time,
+        reason,
+        type,
+        status: "confirmed",
+        timestamp: new Date().toISOString(),
+      };
 
-    // Update appointments list
-    updateAppointmentsList();
+      state.appointments.push(appointment);
+      saveUserData();
 
-    // Show appointment confirmation modal (optional)
-    showAppointmentConfirmation(appointment);
+      // Send WhatsApp notification if appointment is for Dr. Aakash
+      if (doctor === 'dr_aakash') {
+        try {
+          // Import and use WhatsApp service
+          const { sendWhatsAppNotification } = await import('./whatsapp_service.js');
+          await sendWhatsAppNotification(appointment);
+        } catch (error) {
+          console.log('WhatsApp notification not sent (service may not be configured):', error);
+        }
+      }
+
+      // Show success
+      showToast(
+        "Appointment booked successfully! Confirmation sent to your email.",
+        "success"
+      );
+
+      // Reset form
+      document.getElementById("patientName").value = "";
+      document.getElementById("patientPhone").value = "";
+      document.getElementById("patientEmail").value = "";
+      document.getElementById("doctorSelect").value = "";
+      document.getElementById("appointmentDate").value = "";
+      document.getElementById("appointmentTime").value = "";
+      document.getElementById("appointmentReason").value = "";
+
+      // Update appointments list
+      updateAppointmentsList();
+
+      // Show appointment confirmation modal (optional)
+      showAppointmentConfirmation(appointment);
+    } else {
+      throw new Error(data.message || "Failed to book appointment");
+    }
   } catch (error) {
     console.error("Error booking appointment:", error);
     showToast("Error booking appointment. Please try again.", "error");
@@ -582,7 +693,13 @@ function addMessageToChat(role, content, metadata = {}) {
   const bubbleDiv = document.createElement("div");
   bubbleDiv.className = "message-bubble";
 
-  if (role === "ai") {
+  // Handle image display for user messages
+  if (role === "user" && metadata.image) {
+    bubbleDiv.innerHTML = `
+      <p>${content}</p>
+      <img src="${metadata.image}" alt="Uploaded image" style="max-width: 100%; border-radius: 8px; margin-top: 8px; max-height: 300px; object-fit: contain;">
+    `;
+  } else if (role === "ai") {
     bubbleDiv.innerHTML = marked.parse(content);
   } else {
     bubbleDiv.textContent = content;
@@ -743,30 +860,110 @@ async function handleChatImageUpload(event) {
     return;
   }
 
-  showToast("Analyzing image with AI...", "info");
+  showToast("Analyzing image with Gemini AI...", "info");
 
   try {
-    const formData = new FormData();
-    formData.append("image", file);
-    formData.append("user_id", state.currentUser);
+    // Convert image to base64
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+      const imageDataUrl = e.target.result;
 
-    const response = await fetch(`${CONFIG.API_BASE_URL}/analyze-image`, {
-      method: "POST",
-      body: formData,
-    });
+      // Add user message showing image was uploaded
+      addMessageToChat("user", "📸 [Image uploaded for analysis]", { 
+        context: "image-upload",
+        image: imageDataUrl 
+      });
 
-    const data = await response.json();
+      // Show typing indicator
+      showTypingIndicator();
 
-    if (data.analysis) {
-      const message = `📸 Image Analysis:\n\n${data.analysis}`;
-      addMessageToChat("ai", message, { context: "image-analysis" });
-      showToast("Image analyzed successfully!", "success");
-    } else {
-      throw new Error("No analysis from AI");
-    }
+      try {
+        // Call backend API with Gemini for disease recognition
+        const response = await fetch(`${CONFIG.API_BASE_URL}/analyze-injury-image`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            image: imageDataUrl,
+            notes: "Please analyze this medical image for disease recognition and provide detailed insights."
+          }),
+        });
+
+        const data = await response.json();
+
+        hideTypingIndicator();
+
+        if (data.success) {
+          // Format the Gemini AI response with disease recognition
+          let analysisMessage = `📸 **Disease Recognition & Image Analysis**\n\n`;
+          analysisMessage += `**Primary Condition:** ${data.injury_type || 'Not specified'}\n`;
+          
+          if (data.possible_conditions && data.possible_conditions.length > 0) {
+            analysisMessage += `**Possible Conditions:**\n`;
+            data.possible_conditions.forEach((condition, idx) => {
+              analysisMessage += `${idx + 1}. ${condition}\n`;
+            });
+            analysisMessage += `\n`;
+          }
+          
+          analysisMessage += `**Severity:** ${data.severity || 'Not specified'}\n`;
+          analysisMessage += `**Confidence:** ${data.confidence || 0}%\n\n`;
+          analysisMessage += `**Visual Description:**\n${data.description || 'No description available'}\n\n`;
+          
+          if (data.disease_characteristics && data.disease_characteristics.length > 0) {
+            analysisMessage += `**Disease Characteristics:**\n`;
+            data.disease_characteristics.forEach((char, idx) => {
+              analysisMessage += `• ${char}\n`;
+            });
+            analysisMessage += `\n`;
+          }
+          
+          if (data.cure_steps && data.cure_steps.length > 0) {
+            analysisMessage += `**Care Instructions:**\n`;
+            data.cure_steps.forEach((step, idx) => {
+              analysisMessage += `${idx + 1}. ${step}\n`;
+            });
+            analysisMessage += `\n`;
+          }
+
+          if (data.warning_signs && data.warning_signs.length > 0) {
+            analysisMessage += `**⚠️ Warning Signs (Seek Immediate Care):**\n`;
+            data.warning_signs.forEach((sign, idx) => {
+              analysisMessage += `• ${sign}\n`;
+            });
+            analysisMessage += `\n`;
+          }
+
+          if (data.recommended_specialist) {
+            analysisMessage += `**Recommended Specialist:** ${data.recommended_specialist}\n\n`;
+          }
+
+          if (data.medical_advice) {
+            analysisMessage += `**Medical Advice:**\n${data.medical_advice}\n`;
+          }
+
+          addMessageToChat("ai", analysisMessage, { 
+            context: "image-analysis",
+            severity: data.severity,
+            injury_type: data.injury_type
+          });
+          showToast("Image analyzed successfully with Gemini AI for disease recognition!", "success");
+        } else {
+          throw new Error(data.error || "No analysis from AI");
+        }
+      } catch (error) {
+        hideTypingIndicator();
+        console.error("Error analyzing image:", error);
+        addMessageToChat("ai", "❌ Sorry, I encountered an error analyzing the image. Please try again.", { 
+          context: "error" 
+        });
+        showToast("Error analyzing image. Please try again.", "error");
+      }
+    };
+
+    reader.readAsDataURL(file);
   } catch (error) {
-    console.error("Error analyzing image:", error);
-    showToast("Error analyzing image. Please try again.", "error");
+    console.error("Error processing image:", error);
+    showToast("Error processing image. Please try again.", "error");
   }
 }
 
