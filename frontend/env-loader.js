@@ -27,7 +27,7 @@ const env = window._env || {};
 
 // Default values (fallback if env vars not loaded)
 const defaultEnv = {
-    API_BASE_URL: 'http://localhost:3000/api',
+    API_BASE_URL: 'http://localhost:5000/api',
     FIREBASE_API_KEY: '',
     FIREBASE_AUTH_DOMAIN: '',
     FIREBASE_PROJECT_ID: '',

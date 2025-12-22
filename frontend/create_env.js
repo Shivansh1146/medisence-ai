@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const envContent = `API_BASE_URL=http://localhost:3000/api
+const envContent = `API_BASE_URL=http://localhost:5000/api
 FIREBASE_API_KEY=AIzaSyDYafuD9h41VWV6TdlTUqvcAmoeNeiOO9s
 FIREBASE_AUTH_DOMAIN=medisenceai.firebaseapp.com
 FIREBASE_PROJECT_ID=medisenceai

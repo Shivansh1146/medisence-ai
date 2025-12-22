@@ -1322,7 +1322,7 @@
 
       if (token || sessionId) {
         try {
-          const apiUrl = window.ENV?.API_BASE_URL || 'http://localhost:3000/api';
+          const apiUrl = window.ENV?.API_BASE_URL || 'http://localhost:5000/api';
           const response = await fetch(`${apiUrl}/auth/verify`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

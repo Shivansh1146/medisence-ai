@@ -88,7 +88,7 @@ async function sendMessage() {
     showTypingIndicator(true);
 
     try {
-        const response = await fetch('http://localhost:3000/api/chat', {
+        const response = await fetch('http://localhost:5000/api/chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -531,7 +531,7 @@ async function saveFamilyDoctor(event) {
     submitBtn.disabled = true;
 
     try {
-        const response = await fetch('http://localhost:3000/api/save-doctor', {
+        const response = await fetch('http://localhost:5000/api/save-doctor', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -574,7 +574,7 @@ async function loadFamilyDoctor() {
     try {
         console.log('Loading family doctor for user:', userState.userId);
 
-        const response = await fetch(`http://localhost:3000/api/get-doctor/${userState.userId}`);
+        const response = await fetch(`http://localhost:5000/api/get-doctor/${userState.userId}`);
         const data = await response.json();
 
         console.log('Doctor data received:', data);
