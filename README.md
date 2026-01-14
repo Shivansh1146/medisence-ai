@@ -2,7 +2,7 @@
 
 ## 🚀 Project Overview
 
-MedicSense AI is an AI-powered medical chatbot that provides healthcare guidance, symptom analysis, and emergency assistance. Built for hackathons with beginner-friendly code.
+MedicSense AI is an AI-assisted medical chatbot prototype that provides healthcare guidance, symptom analysis, and emergency assistance. Built for hackathons with beginner-friendly code.
 
 **GitHub Repository:** [https://github.com/aakash4dev/medisence-ai](https://github.com/aakash4dev/medisence-ai)
 
@@ -13,7 +13,7 @@ MedicSense AI is an AI-powered medical chatbot that provides healthcare guidance
 - **Family Doctor System**: Store and personalize mild symptom advice
 - **Doctor Matching**: Find specialists based on symptoms and location
 - **Ethical AI**: Non-diagnostic, safety-first medical guidance
-- **100% Local**: No external APIs required
+- **Primarily local logic with optional AI service integration**
 
 ## 📁 Project Structure
 
@@ -230,7 +230,7 @@ pip install --upgrade flask flask-cors
 
 ### Key Points to Emphasize
 
-✅ **Local Intelligence**: Pattern matching, no external APIs
+✅ **Local Intelligence**: Primarily rule-based logic with optional AI assistance
 ✅ **Safety First**: Ethical constraints, emergency detection
 ✅ **Beginner-Friendly**: Well-commented, modular code
 ✅ **Complete System**: Backend + Frontend + Knowledge Base
@@ -248,6 +248,49 @@ pip install --upgrade flask flask-cors
 > - 🇬🇧 UK: 999 or 112
 > - 🇮🇳 India: 102 (Ambulance), 108 (Emergency)
 > - 🇦🇺 Australia: 000
+
+## 📋 Scope, Claims & Responsible Positioning
+
+### Production-Ready Clarification
+
+MedicSense AI is:
+
+- **Demo-ready**: Fully functional demonstration of medical chatbot capabilities
+- **Hackathon-ready**: Complete feature set suitable for hackathon evaluation
+- **UX-complete**: Polished user interface with comprehensive workflow coverage
+
+MedicSense AI is **NOT production-ready** due to the following limitations:
+
+- No persistent storage layer (data stored in local JSON files)
+- No hardened authentication enforcement (demo-level security implementation)
+- No audit logging (no comprehensive tracking of system interactions)
+- No regulatory compliance (HIPAA, GDPR, or other healthcare data protection standards)
+- AI safety is heuristic-based and intended for demonstration purposes only
+
+**Positioning Statement**: A production-aligned prototype designed for real-world workflows.
+
+### Security & Encryption Messaging Clarification
+
+Security banners and encryption mentions in this project reflect intended production deployment standards and architectural design goals. The current demo infrastructure may not include full TLS certificate configuration or production-grade security hardening.
+
+**Q: Is this fully secured for production?**
+**A: Security messaging reflects intended production deployment, not current demo infrastructure.**
+
+HTTPS indicators shown in the UI are illustrative of intended deployment, not guaranteed in the demo environment.
+
+### AI / Gemini Integration Claim Clarification
+
+This project explicitly avoids claims of:
+
+- Accurate diagnosis
+- Clinical reliability
+
+Instead, MedicSense AI provides:
+
+- **AI-assisted medical guidance**: Supportive information to help users understand their symptoms
+- **Safety-first recommendations with disclaimers**: Guidance that prioritizes user safety while clearly communicating limitations
+
+**Important**: This system is **NOT a diagnostic tool**. It does not provide medical diagnoses, clinical assessments, or replace professional medical consultation. All guidance is informational and should be verified with qualified healthcare professionals.
 
 ## 📝 License
 
