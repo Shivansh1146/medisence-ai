@@ -316,6 +316,17 @@ document.addEventListener("DOMContentLoaded", async function () {
   }
 });
 
+// ========================================
+// EVENT DELEGATION - PROFILE BUTTON
+// ========================================
+// Production-grade event delegation for dynamically rendered elements
+document.addEventListener("click", (e) => {
+  const profileBtn = e.target.closest("#authBtn");
+  if (!profileBtn) return;
+
+  toggleProfileMenu();
+});
+
 function initializeAppCore() {
   console.log("📦 Loading user data...");
   loadUserData();
