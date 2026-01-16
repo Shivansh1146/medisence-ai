@@ -73,80 +73,152 @@ def chat():
     """Main chat endpoint with LLM-style responses"""
     try:
         data = request.json
-        user_message = data.get("message", "").lower().strip()
+        raw_message = data.get("message", "").strip()
         user_id = data.get("user_id", "anonymous")
 
-        # Simulate thinking time (like LLM processing)
+        # 1. Input Validation & Sanitization
+        if not raw_message or len(raw_message) < 5:
+             # Safe fallback for empty/short input
+             return jsonify({
+                 "response": "Please describe your symptoms in more detail so I can help you.",
+                 "severity": 1,
+                 "type": "general",
+                 "follow_up": ["Can you describe what you're feeling?"]
+             })
+
+        # Extract explicitly set severity from message if present (e.g., "Severity: 5/10")
+        import re
+        severity_match = re.search(r"Severity:\s*(\d+)/10", raw_message)
+        user_severity_input = int(severity_match.group(1)) if severity_match else None
+
+        # Clamp severity 1-10
+        if user_severity_input:
+            user_severity_input = max(1, min(10, user_severity_input))
+
+        # 3. Medical Safety Guardrails (High-Risk Detection - MASTER LIST)
+        high_risk_keywords = [
+            # 1. Cardiac / Heart
+            "chest pain", "chest tightness", "pressure in chest", "crushing chest",
+            "burning chest", "pain in left arm", "pain in jaw", "pain in neck",
+            "heart pain", "heart attack", "cardiac arrest", "palpitations with dizziness",
+            "irregular heartbeat with pain", "sudden chest discomfort",
+            "shortness of breath with chest pain",
+
+            # 2. Stroke / Neuro
+            "sudden weakness", "weakness on one side", "face drooping", "slurred speech",
+            "trouble speaking", "trouble understanding", "sudden confusion",
+            "sudden vision loss", "blurred vision suddenly", "loss of balance",
+            "sudden dizziness", "severe headache sudden", "worst headache",
+            "numbness on one side", "loss of coordination",
+
+            # 3. Respiratory
+            "difficulty breathing", "cannot breathe", "shortness of breath",
+            "breathlessness", "gasping", "wheezing severe", "choking",
+            "airway blocked", "tight throat", "bluish lips", "bluish face",
+            "rapid breathing", "chest retractions",
+
+            # 4. Trauma / Pain
+            "unbearable pain", "extreme pain", "severe pain sudden",
+            "intense abdominal pain", "sharp abdominal pain", "severe back pain sudden",
+            "head injury", "loss of consciousness", "fainted", "collapsed",
+            "severe injury", "major accident", "fracture", "bone sticking out",
+
+            # 5. Bleeding
+            "heavy bleeding", "bleeding won't stop", "vomiting blood",
+            "coughing blood", "blood in stool black", "blood in urine",
+            "internal bleeding", "pale skin", "cold clammy", "shock symptoms",
+
+            # 6. Allergy
+            "swelling of face", "swelling of lips", "swelling of tongue",
+            "throat swelling", "difficulty swallowing", "severe allergic",
+            "anaphylaxis", "hives with breathing",
+
+            # 7. Fever / Infection
+            "very high fever", "fever above 104", "fever with rash",
+            "fever with confusion", "stiff neck", "fever and seizure", "febrile seizure",
+
+            # 8. Poisoning / Overdose
+            "poisoning", "overdose", "took too much", "swallowed poison",
+            "chemical ingestion", "alcohol poisoning", "substance ingestion",
+
+            # 9. Mental Health
+            "suicidal", "want to die", "harm myself", "kill myself",
+            "self harm", "cutting myself", "overdose intentionally", "hearing voices",
+
+            # 10. Pregnancy / Child
+            "pregnant bleeding", "abdominal pain pregnancy", "baby not moving",
+            "child unconscious", "child not breathing", "newborn fever", "seizure in child"
+        ]
+        is_high_risk = any(k in raw_message.lower() for k in high_risk_keywords)
+
+        # 7. Logging (Privacy-Safe)
+        import datetime
+        print(f"[{datetime.datetime.now().isoformat()}] REQ | SeverityInput: {user_severity_input} | RiskDetect: {is_high_risk}")
+
+        # Emergency Override
+        if is_high_risk:
+            # Force severity to 4 (Emergency)
+            mapped_severity = 4
+            ai_response = gemini_service.chat_medical(raw_message, ["Critical Symptoms"], mapped_severity, system_override="🚨 EMERGENCY PROTOCOL ACTIVE.")
+            return jsonify({
+                "response": ai_response,
+                "severity": 4,
+                "type": "emergency",
+                "thinking_process": "Critical keywords detected. Activating safety protocol.",
+                "reasoning": "High-risk symptoms detected requiring immediate medical attention."
+            })
+
+        # 2. Severity Interpretation Logic (Mapping 1-10 -> 1-4 for Internal Context)
+        # 1-3 -> Mild (1)
+        # 4-6 -> Moderate (2)
+        # 7-10 -> Severe (3)
+        if user_severity_input:
+            if user_severity_input <= 3:
+                mapped_severity = 1
+            elif user_severity_input <= 6:
+                mapped_severity = 2
+            else:
+                mapped_severity = 3
+        else:
+            # Fallback to classifier if no explicit input
+            symptoms = analyzer.extract_symptoms(raw_message)
+            mapped_severity = classifier.classify(raw_message, symptoms)
+
+        # Simulate thinking time
         import random
         import time
+        time.sleep(random.uniform(0.5, 1.0))
 
-        thinking_time = random.uniform(0.5, 1.5)  # 0.5-1.5 seconds
-        time.sleep(thinking_time)
+        # Check non-medical
+        if is_non_medical(raw_message):
+             return jsonify({
+                 "response": "I am a medical AI assistant. Please describe your health symptoms.",
+                 "severity": 0,
+                 "type": "general"
+             })
 
-        # Check if non-medical query
-        if is_non_medical(user_message):
-            return jsonify(
-                {
-                    "response": generate_llm_style_response(
-                        "I appreciate you reaching out, but I'm specifically designed to assist with medical and health-related concerns. I'm trained to analyze symptoms, provide health guidance, and help in medical emergencies.\n\nIs there a health concern I can help you with today?",
-                        thinking_process="Analyzing query intent → Detected non-medical topic → Providing polite redirection",
-                    ),
-                    "severity": 0,
-                    "type": "general",
-                    "thinking_process": "I analyzed your message and determined it's not health-related. Redirecting to medical topics.",
-                    "follow_up": [
-                        "Do you have any health symptoms?",
-                        "Is there a medical concern I can help with?",
-                    ],
-                }
-            )
+        # Analyze symptoms
+        symptoms = analyzer.extract_symptoms(raw_message)
 
-        # Check for emergency first
-        emergency_result = emergency.check_emergency(user_message)
-        if emergency_result["is_emergency"]:
-            return jsonify(
-                {
-                    "response": generate_llm_style_response(
-                        emergency_result["response"],
-                        thinking_process=f"Analyzing symptoms → CRITICAL: Emergency detected → Activating emergency protocol",
-                    ),
-                    "severity": 4,
-                    "type": "emergency",
-                    "first_aid": emergency_result.get("first_aid", []),
-                    "hospitals": get_nearby_hospitals(data.get("city", "unknown")),
-                    "thinking_process": "Emergency situation identified. Prioritizing immediate safety instructions.",
-                    "reasoning": "Based on the keywords in your message, this appears to be a medical emergency requiring immediate attention.",
-                }
-            )
+        # Generate AI response
+        ai_response = gemini_service.chat_medical(raw_message, symptoms, mapped_severity)
 
-        # Analyze symptoms with detailed reasoning
-        symptoms = analyzer.extract_symptoms(user_message)
-        severity = classifier.classify(user_message, symptoms)
-
-        # Generate AI-powered response using Gemini
-        ai_response = gemini_service.chat_medical(user_message, symptoms, severity)
-
-        # Generate enhanced LLM-style response with reasoning
-        response = generate_medical_response_llm(
-            user_message, symptoms, severity, user_id
-        )
-
-        # Use AI response if available, otherwise use fallback
-        final_response = (
-            ai_response if ai_response != response["text"] else response["text"]
+        # Generate metadata (doctors, type, etc.) using existing logic
+        response_metadata = generate_medical_response_llm(
+            raw_message, symptoms, mapped_severity, user_id
         )
 
         return jsonify(
             {
-                "response": final_response,
-                "severity": severity,
-                "type": response["type"],
-                "suggested_doctors": response.get("doctors", []),
-                "actions": response.get("actions", []),
-                "redirect_to": response.get("redirect_to"),
-                "thinking_process": response.get("thinking_process", ""),
-                "reasoning": response.get("reasoning", ""),
-                "follow_up": response.get("follow_up", []),
+                "response": ai_response,
+                "severity": mapped_severity,
+                "type": response_metadata["type"],
+                "suggested_doctors": response_metadata.get("doctors", []),
+                "actions": response_metadata.get("actions", []),
+                "redirect_to": response_metadata.get("redirect_to"),
+                "thinking_process": response_metadata.get("thinking_process", ""),
+                "reasoning": response_metadata.get("reasoning", ""),
+                "follow_up": response_metadata.get("follow_up", []),
             }
         )
 
