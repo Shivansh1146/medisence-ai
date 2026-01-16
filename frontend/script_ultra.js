@@ -1619,8 +1619,13 @@ function validateEmail(email) {
 }
 
 function validatePhone(phone) {
+  // Remove all non-digit characters for counting
+  const digitsOnly = phone.replace(/\D/g, "");
+
+  // Basic sanity check: 7-15 digits (supports international formats)
+  // Allows: +, -, spaces, parentheses, digits
   const re = /^[\d\s\-\+\(\)]+$/;
-  return re.test(phone) && phone.replace(/\D/g, "").length >= 10;
+  return re.test(phone) && digitsOnly.length >= 7 && digitsOnly.length <= 15;
 }
 
 function downloadTextFile(content, filename) {
@@ -1789,58 +1794,10 @@ function restoreAuthModal() {
 }
 
 async function handleEmailLogin() {
-  if (!window.firebaseAuth) {
-    showToast("System initializing... please wait.", "warning");
-    return;
-  }
-
-  const emailEl = document.getElementById("authEmail");
-  const passEl = document.getElementById("authPassword");
-
-  const email = emailEl ? emailEl.value.trim() : "";
-  const password = passEl ? passEl.value : "";
-
-  if (!email || !password) {
-    showAuthError("Please enter both email and password");
-    return;
-  }
-
-  if (password.length < 6) {
-    showAuthError("Password must be at least 6 characters");
-    return;
-  }
-
-  const { auth, signInWithEmailAndPassword, createUserWithEmailAndPassword } =
-    window.firebaseAuth;
-
-  setAuthLoading(true);
-
-  try {
-    // Try to sign in first
-    await signInWithEmailAndPassword(auth, email, password);
-    // Don't close modal or show toast here - onAuthStateChanged will handle it
-  } catch (error) {
-    setAuthLoading(false);
-
-    // Security fix: Normalize all authentication failures to prevent user enumeration
-    if (
-      error.code === "auth/user-not-found" ||
-      error.code === "auth/invalid-credential" ||
-      error.code === "auth/wrong-password" ||
-      error.code === "auth/invalid-email"
-    ) {
-      // Generic message - does not reveal if email exists or password is wrong
-      showAuthError(
-        "Unable to sign in. Please check your credentials and try again."
-      );
-    } else if (error.code === "auth/too-many-requests") {
-      showAuthError(
-        "Too many attempts. Please try again later or reset your password."
-      );
-    } else {
-      showAuthError(getReadableAuthError(error));
-    }
-  }
+  // GOOGLE-ONLY AUTH: Email/password authentication has been removed
+  // This button now triggers Google Sign-In directly
+  console.log("Email/password auth disabled - redirecting to Google Sign-In");
+  await handleGoogleLogin();
 }
 
 async function handleGoogleLogin() {
@@ -1992,8 +1949,6 @@ function getReadableAuthError(error) {
 function setAuthLoading(isLoading) {
   const btnGoogle = document.getElementById("btnGoogle");
   const btnEmail = document.getElementById("btnEmailLogin");
-  const emailInput = document.getElementById("authEmail");
-  const passInput = document.getElementById("authPassword");
 
   const toggle = (el, disabled, opacity) => {
     if (el) {
@@ -2010,8 +1965,6 @@ function setAuthLoading(isLoading) {
         '<i class="fas fa-spinner fa-spin"></i> Authenticating...';
       btnEmail.style.opacity = "0.7";
     }
-    toggle(emailInput, true, "1");
-    toggle(passInput, true, "1");
   } else {
     toggle(btnGoogle, false, "1");
     if (btnEmail) {
@@ -2019,8 +1972,6 @@ function setAuthLoading(isLoading) {
       btnEmail.innerHTML = "Sign In / Sign Up";
       btnEmail.style.opacity = "1";
     }
-    toggle(emailInput, false, "1");
-    toggle(passInput, false, "1");
   }
 }
 

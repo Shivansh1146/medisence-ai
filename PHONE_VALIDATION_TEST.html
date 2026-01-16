@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Phone Validation Test - MedicSense AI</title>
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        max-width: 800px;
+        margin: 50px auto;
+        padding: 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+      }
+      .container {
+        background: white;
+        color: #333;
+        padding: 30px;
+        border-radius: 15px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+      }
+      h1 {
+        color: #667eea;
+        margin-bottom: 10px;
+      }
+      .subtitle {
+        color: #666;
+        margin-bottom: 30px;
+      }
+      .test-case {
+        background: #f8f9fa;
+        padding: 15px;
+        margin: 10px 0;
+        border-radius: 8px;
+        border-left: 4px solid #ddd;
+      }
+      .test-case.pass {
+        border-left-color: #28a745;
+        background: #d4edda;
+      }
+      .test-case.fail {
+        border-left-color: #dc3545;
+        background: #f8d7da;
+      }
+      .phone-input {
+        font-family: monospace;
+        font-weight: bold;
+      }
+      .result {
+        margin-top: 5px;
+        font-size: 14px;
+      }
+      .summary {
+        background: #667eea;
+        color: white;
+        padding: 20px;
+        border-radius: 8px;
+        margin-top: 30px;
+      }
+      .summary h2 {
+        margin-top: 0;
+      }
+      button {
+        background: #667eea;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 16px;
+        margin-top: 20px;
+      }
+      button:hover {
+        background: #764ba2;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>📱 Phone Validation Test Suite</h1>
+      <p class="subtitle">Testing the updated international phone validation</p>
+
+      <div id="test-results"></div>
+
+      <button onclick="runTests()">🔄 Run Tests Again</button>
+
+      <div class="summary" id="summary" style="display: none">
+        <h2>📊 Test Summary</h2>
+        <p id="summary-text"></p>
+      </div>
+    </div>
+
+    <script>
+      // UPDATED VALIDATION FUNCTION (from script_ultra.js)
+      function validatePhone(phone) {
+        // Remove all non-digit characters for counting
+        const digitsOnly = phone.replace(/\D/g, "");
+
+        // Basic sanity check: 7-15 digits (supports international formats)
+        // Allows: +, -, spaces, parentheses, digits
+        const re = /^[\d\s\-\+\(\)]+$/;
+        return (
+          re.test(phone) && digitsOnly.length >= 7 && digitsOnly.length <= 15
+        );
+      }
+
+      const testCases = [
+        // Should PASS - International formats
+        {
+          phone: "+1-234-5678",
+          expected: true,
+          description: "US short format (8 digits)",
+        },
+        {
+          phone: "+1-234-567-8900",
+          expected: true,
+          description: "US standard (10 digits)",
+        },
+        {
+          phone: "+44 20 7123 1234",
+          expected: true,
+          description: "UK format (11 digits)",
+        },
+        {
+          phone: "+91-9876543210",
+          expected: true,
+          description: "India format (10 digits)",
+        },
+        {
+          phone: "+86 138 0000 0000",
+          expected: true,
+          description: "China format (11 digits)",
+        },
+        {
+          phone: "(123) 456-7890",
+          expected: true,
+          description: "US with parentheses",
+        },
+        {
+          phone: "123-456-7890",
+          expected: true,
+          description: "US standard format",
+        },
+        {
+          phone: "+1 650 555 1234",
+          expected: true,
+          description: "US with spaces",
+        },
+        { phone: "1234567", expected: true, description: "Minimum 7 digits" },
+        {
+          phone: "123456789012345",
+          expected: true,
+          description: "Maximum 15 digits",
+        },
+
+        // Should FAIL - Invalid formats
+        {
+          phone: "123-456",
+          expected: false,
+          description: "Too short (6 digits)",
+        },
+        {
+          phone: "12345678901234567890",
+          expected: false,
+          description: "Too long (20 digits)",
+        },
+        {
+          phone: "abc-def-ghij",
+          expected: false,
+          description: "No digits at all",
+        },
+        {
+          phone: "phone@number.com",
+          expected: false,
+          description: "Email format (invalid)",
+        },
+        { phone: "+1-234-5", expected: false, description: "Only 5 digits" },
+        { phone: "", expected: false, description: "Empty string" },
+        { phone: "   ", expected: false, description: "Only spaces" },
+      ];
+
+      function runTests() {
+        const resultsDiv = document.getElementById("test-results");
+        resultsDiv.innerHTML = "";
+
+        let passed = 0;
+        let failed = 0;
+
+        testCases.forEach((test, index) => {
+          const result = validatePhone(test.phone);
+          const success = result === test.expected;
+
+          if (success) passed++;
+          else failed++;
+
+          const testDiv = document.createElement("div");
+          testDiv.className = `test-case ${success ? "pass" : "fail"}`;
+          testDiv.innerHTML = `
+                    <div>
+                        <strong>Test ${index + 1}:</strong> ${test.description}
+                    </div>
+                    <div class="phone-input">"${test.phone}"</div>
+                    <div class="result">
+                        Expected: ${test.expected ? "✅ PASS" : "❌ FAIL"} |
+                        Got: ${result ? "✅ PASS" : "❌ FAIL"} |
+                        ${success ? "🟢 CORRECT" : "🔴 WRONG"}
+                    </div>
+                `;
+          resultsDiv.appendChild(testDiv);
+        });
+
+        // Show summary
+        const summaryDiv = document.getElementById("summary");
+        const summaryText = document.getElementById("summary-text");
+        summaryDiv.style.display = "block";
+
+        const total = testCases.length;
+        const percentage = Math.round((passed / total) * 100);
+
+        summaryText.innerHTML = `
+                <strong>Total Tests:</strong> ${total}<br>
+                <strong>Passed:</strong> ${passed} ✅<br>
+                <strong>Failed:</strong> ${failed} ❌<br>
+                <strong>Success Rate:</strong> ${percentage}%
+                ${
+                  percentage === 100
+                    ? "<br><br>🎉 <strong>ALL TESTS PASSED!</strong>"
+                    : ""
+                }
+            `;
+      }
+
+      // Run tests on page load
+      window.addEventListener("DOMContentLoaded", runTests);
+    </script>
+  </body>
+</html>

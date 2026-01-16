@@ -18,7 +18,8 @@ from gemini_service import gemini_service
 from otp_service import otp_service
 from severity_classifier import SeverityClassifier
 from symptom_analyzer import SymptomAnalyzer
-from unified_auth import register_unified_auth_route
+# REMOVED: Email/password authentication - Google OAuth only
+# from unified_auth import register_unified_auth_route
 
 app = Flask(__name__)
 CORS(app)  # Allow frontend to communicate
@@ -532,68 +533,53 @@ def generate_medical_response_llm(message, symptoms, severity, user_id):
     return responses.get(severity, responses[1])
 
 
-# ==================== NEW ENDPOINTS FOR NEXT.JS FRONTEND ====================
+# ==================== DEPRECATED AUTH ENDPOINTS ====================
+# Email/password authentication has been REMOVED
+# Only Google OAuth is supported now
+# These endpoints return 410 Gone for backwards compatibility
 
 
-# Authentication Endpoints
+# Authentication Endpoints - DEPRECATED
 @app.route("/api/auth/send-otp", methods=["POST"])
 def send_otp_simple():
-    """Send OTP to phone number"""
-    data = request.json
-    phone = data.get("phone")
-
-    # Generate OTP (6 digits)
-    import random
-
-    otp = str(random.randint(100000, 999999))
-
-    # In production, send via SMS provider (Twilio, MSG91)
-    # For now, just return success and log OTP
-    print(f"📱 OTP for {phone}: {otp}")
-
+    """DEPRECATED: Email/password auth removed - use Google Sign-In only"""
     return jsonify(
         {
-            "success": True,
-            "message": f"OTP sent to {phone}",
-            "otp": otp,  # Remove in production!
+            "success": False,
+            "error": "Authentication method no longer supported",
+            "message": "Please use Google Sign-In to continue"
         }
-    )
+    ), 410
 
 
 @app.route("/api/auth/verify-otp", methods=["POST"])
 def verify_otp_simple():
-    """Verify OTP and login"""
-    data = request.json
-    phone = data.get("phone")
-    otp = data.get("otp")
-
-    # In production, verify against stored OTP
-    # For now, accept any 6-digit OTP
-    if len(otp) == 6:
-        import uuid
-
-        user_id = str(uuid.uuid4())
-
-        return jsonify(
-            {
-                "success": True,
-                "token": f"jwt_token_{user_id}",
-                "user": {
-                    "id": user_id,
-                    "phone": phone,
-                    "name": "User",
-                    "email": f"{phone}@medicsense.ai",
-                },
-            }
-        )
-
-    return jsonify({"success": False, "message": "Invalid OTP"}), 401
+    """DEPRECATED: Email/password auth removed - use Google Sign-In only"""
+    return jsonify(
+        {
+            "success": False,
+            "error": "Authentication method no longer supported",
+            "message": "Please use Google Sign-In to continue"
+        }
+    ), 410
 
 
 @app.route("/api/auth/logout", methods=["POST"])
 def logout():
-    """Logout user"""
+    """Logout user - Still supported"""
     return jsonify({"success": True, "message": "Logged out successfully"})
+
+
+@app.route("/api/auth/unified", methods=["POST"])
+def unified_auth_deprecated():
+    """DEPRECATED: Unified auth removed - use Google Sign-In only"""
+    return jsonify(
+        {
+            "success": False,
+            "error": "Authentication method no longer supported",
+            "message": "Please use Google Sign-In to continue"
+        }
+    ), 410
 
 
 # Chat Endpoints
@@ -1149,25 +1135,17 @@ def send_otp():
                 400,
             )
 
-        # Validate phone format
-        if not phone.startswith("+") or len(phone) < 10:
-            return (
-                jsonify(
-                    {
-                        "success": False,
-                        "message": "Invalid phone number format. Use +91XXXXXXXXXX",
-                    }
-                ),
-                400,
-            )
-
-        # Generate and send OTP
-        result = otp_service.generate_otp(phone)
-
-        if result["success"]:
-            return jsonify(result), 200
-        else:
-            return jsonify(result), 429  # Too Many Requests
+        # DEPRECATED - Email/password auth removed
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "error": "Authentication method no longer supported",
+                    "message": "Please use Google Sign-In to continue",
+                }
+            ),
+            410,
+        )
 
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500
@@ -1175,53 +1153,26 @@ def send_otp():
 
 @app.route("/api/auth/otp/verify", methods=["POST"])
 def verify_otp():
-    """Verify OTP"""
-    try:
-        data = request.json
-        phone = data.get("phone", "").strip()
-        otp = data.get("otp", "").strip()
-
-        if not phone or not otp:
-            return (
-                jsonify({"success": False, "message": "Phone and OTP are required"}),
-                400,
-            )
-
-        # Verify OTP
-        result = otp_service.verify_otp(phone, otp)
-
-        if result["success"]:
-            return jsonify(result), 200
-        else:
-            return jsonify(result), 400
-
-    except Exception as e:
-        return jsonify({"success": False, "message": str(e)}), 500
+    """DEPRECATED: Email/password auth removed - use Google Sign-In only"""
+    return jsonify(
+        {
+            "success": False,
+            "error": "Authentication method no longer supported",
+            "message": "Please use Google Sign-In to continue"
+        }
+    ), 410
 
 
 @app.route("/api/auth/otp/resend", methods=["POST"])
 def resend_otp():
-    """Resend OTP"""
-    try:
-        data = request.json
-        phone = data.get("phone", "").strip()
-
-        if not phone:
-            return (
-                jsonify({"success": False, "message": "Phone number is required"}),
-                400,
-            )
-
-        # Resend OTP
-        result = otp_service.resend_otp(phone)
-
-        if result["success"]:
-            return jsonify(result), 200
-        else:
-            return jsonify(result), 429
-
-    except Exception as e:
-        return jsonify({"success": False, "message": str(e)}), 500
+    """DEPRECATED: Email/password auth removed - use Google Sign-In only"""
+    return jsonify(
+        {
+            "success": False,
+            "error": "Authentication method no longer supported",
+            "message": "Please use Google Sign-In to continue"
+        }
+    ), 410
 
 
 # ================================
@@ -1545,9 +1496,11 @@ def emergency_hospitals():
 
 
 # ============================================
-# REGISTER UNIFIED AUTHENTICATION ROUTE
+# GOOGLE-ONLY AUTHENTICATION
 # ============================================
-register_unified_auth_route(app, db, otp_service)
+# Email/password authentication has been removed
+# Only Google OAuth is supported
+# All email/password endpoints return 410 Gone
 
 
 if __name__ == "__main__":
@@ -1559,8 +1512,8 @@ if __name__ == "__main__":
     print("🔔 Notifications endpoint enabled")
     print("📄 Reports endpoint enabled")
     print("🔍 Search endpoint enabled")
-    print("📱 OTP authentication enabled")
-    print("🔐 Unified email auth enabled (automatic sign-in/sign-up)")
+    print("� Google OAuth authentication ONLY")
+    print("⚠️  Email/password auth has been removed")
     print(
         "\n💡 Tip: Get a free Gemini API key from https://makersuite.google.com/app/apikey"
     )

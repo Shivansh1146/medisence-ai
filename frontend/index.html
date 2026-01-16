@@ -212,52 +212,6 @@
     </script>
   </div>
 
-  <!-- Top Alert Bar (Dynamic) -->
-  <div class="alert-bar" id="alertBar">
-    <div class="container">
-      <div class="alert-content">
-        <i class="fas fa-info-circle"></i>
-        <span>Your health data is secure & private - 256-bit encryption
-          enabled</span>
-        <button class="alert-close" onclick="closeAlert()">
-          <i class="fas fa-times"></i>
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Top Bar -->
-  <div class="top-bar">
-    <div class="container">
-      <div class="top-bar-content">
-        <div class="top-bar-left">
-          <span class="top-bar-item">
-            <i class="fas fa-brain"></i>
-            AI-Powered NLP System
-          </span>
-          <span class="top-bar-item">
-            <i class="fas fa-cloud"></i>
-            Cloud Automated
-          </span>
-          <span class="top-bar-item">
-            <i class="fas fa-shield-alt"></i>
-            100% Secure
-          </span>
-        </div>
-        <div class="top-bar-right">
-          <span class="top-bar-item">
-            <i class="fas fa-headset"></i>
-            24/7 Support: 1800-MEDIC-AI
-          </span>
-          <button class="emergency-btn pulse-animation" onclick="handleEmergency()">
-            <i class="fas fa-ambulance"></i>
-            Emergency
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <!-- Main Navigation - Glassmorphism Style -->
   <nav class="navbar" id="navbar">
     <div class="container">
@@ -268,43 +222,65 @@
             <i class="fas fa-heartbeat"></i>
           </div>
           <div class="logo-text">
-            <span class="logo-main">MedicSense AI</span>
+            <span class="logo-main">MedicSense</span>
+            <span class="logo-sub">AI</span>
           </div>
         </div>
 
         <!-- Desktop Menu -->
         <ul class="nav-menu" id="navMenu">
-
           <li>
-            <a href="#symptom-checker" class="nav-link"><i class="fas fa-stethoscope"></i> Symptom Check</a>
+            <a href="#symptom-checker" class="nav-link nav-link-primary">
+              <i class="fas fa-stethoscope"></i>
+              <span>Symptom Check</span>
+            </a>
           </li>
           <li>
-            <a href="#appointments" class="nav-link"><i class="fas fa-calendar-check"></i> Appointments</a>
+            <a href="#appointments" class="nav-link nav-link-primary">
+              <i class="fas fa-calendar-plus"></i>
+              <span>Book Appointment</span>
+            </a>
           </li>
           <li>
-            <a href="#ai-chat" class="nav-link"><i class="fas fa-robot"></i> AI Assistant</a>
+            <a href="#ai-chat" class="nav-link nav-link-secondary">
+              <i class="fas fa-robot"></i>
+              <span>AI Assistant</span>
+            </a>
           </li>
           <li>
-            <a href="#reports" class="nav-link"><i class="fas fa-file-medical"></i> Reports</a>
+            <a href="profile.html" class="nav-link nav-link-tertiary">
+              <i class="fas fa-calendar-check"></i>
+              <span>My Appointments</span>
+            </a>
+          </li>
+          <li>
+            <a href="#reports" class="nav-link nav-link-tertiary">
+              <i class="fas fa-file-medical"></i>
+              <span>Reports</span>
+            </a>
           </li>
         </ul>
 
         <!-- User Actions -->
         <div class="nav-actions">
-          <button class="icon-btn notification-btn" onclick="window.location.href='notifications.html'">
-            <i class="fas fa-bell"></i>
-            <span class="badge" id="notificationBadge">0</span>
+          <!-- User Controls Group -->
+          <div class="user-controls">
+            <button class="icon-btn notification-btn" onclick="window.location.href='notifications.html'" title="Notifications">
+              <i class="fas fa-bell"></i>
+              <span class="badge" id="notificationBadge">0</span>
+            </button>
+
+            <button class="icon-btn auth-btn" onclick="openAuthModal()" id="authBtn" title="Account">
+              <i class="fas fa-user-circle"></i>
+            </button>
+          </div>
+
+          <!-- Emergency Button - Isolated -->
+          <button class="btn emergency-btn" onclick="handleEmergency()">
+            <i class="fas fa-ambulance"></i>
+            <span>Emergency</span>
           </button>
 
-          <!-- Auth Button -->
-          <button class="icon-btn auth-btn" onclick="openAuthModal()" id="authBtn">
-            <i class="fas fa-user-circle"></i>
-          </button>
-
-          <button class="btn btn-primary" onclick="scrollToSection('appointments')">
-            <i class="fas fa-calendar-plus"></i>
-            Book Appointment
-          </button>
           <button class="icon-btn mobile-menu-btn" onclick="toggleMobileMenu()">
             <i class="fas fa-bars"></i>
           </button>
@@ -329,16 +305,24 @@
           <a href="#symptom-checker" onclick="toggleMobileMenu()"><i class="fas fa-stethoscope"></i> Symptom Check</a>
         </li>
         <li>
-          <a href="#appointments" onclick="toggleMobileMenu()"><i class="fas fa-calendar-check"></i> Appointments</a>
+          <a href="#appointments" onclick="toggleMobileMenu()"><i class="fas fa-calendar-plus"></i> Book Appointment</a>
         </li>
         <li>
           <a href="#ai-chat" onclick="toggleMobileMenu()"><i class="fas fa-robot"></i> AI Assistant</a>
+        </li>
+        <li>
+          <a href="profile.html" onclick="toggleMobileMenu()"><i class="fas fa-calendar-check"></i> My Appointments</a>
         </li>
         <li>
           <a href="#reports" onclick="toggleMobileMenu()"><i class="fas fa-file-medical"></i> Reports</a>
         </li>
         <li>
           <a href="notifications.html" onclick="toggleMobileMenu()"><i class="fas fa-bell"></i> Notifications</a>
+        </li>
+        <li>
+          <a href="#" onclick="handleEmergency(); toggleMobileMenu();" style="color: #ef4444; font-weight: 700;">
+            <i class="fas fa-ambulance"></i> EMERGENCY
+          </a>
         </li>
       </ul>
     </div>
@@ -476,115 +460,6 @@
               <span>100% Secure</span>
             </div>
           </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Problem Statement Solutions Section -->
-  <section class="solutions-section">
-    <div class="container">
-      <div class="section-header" data-aos="fade-up">
-        <span class="section-badge">Our Solution</span>
-        <h2 class="section-title">Solving Healthcare's Biggest Challenges</h2>
-        <p class="section-description">
-          Addressing delays in diagnosis, appointment handling, and patient
-          communication through cutting-edge AI automation
-        </p>
-      </div>
-
-      <div class="solutions-grid">
-        <!-- Solution 1: Symptom Checking -->
-        <div class="solution-card" data-aos="fade-up" data-aos-delay="100">
-          <div class="solution-icon problem">
-            <i class="fas fa-exclamation-triangle"></i>
-          </div>
-          <h3>Problem: Diagnosis Delays</h3>
-          <p class="problem-text">
-            Long waiting times for medical consultations lead to delayed
-            diagnosis and treatment
-          </p>
-          <div class="solution-arrow">
-            <i class="fas fa-arrow-down"></i>
-          </div>
-          <div class="solution-icon solution">
-            <i class="fas fa-stethoscope"></i>
-          </div>
-          <h3>Solution: AI Symptom Checker</h3>
-          <p class="solution-text">
-            NLP-powered instant symptom analysis with Google Gemini AI
-            provides immediate preliminary diagnosis in under 2 minutes
-          </p>
-          <ul class="solution-features">
-            <li><i class="fas fa-check"></i> Natural language processing</li>
-            <li><i class="fas fa-check"></i> Context-aware analysis</li>
-            <li><i class="fas fa-check"></i> Instant recommendations</li>
-          </ul>
-          <button class="solution-btn" onclick="scrollToSection('symptom-checker')">
-            Try Symptom Checker
-          </button>
-        </div>
-
-        <!-- Solution 2: Appointment Scheduling -->
-        <div class="solution-card" data-aos="fade-up" data-aos-delay="200">
-          <div class="solution-icon problem">
-            <i class="fas fa-exclamation-triangle"></i>
-          </div>
-          <h3>Problem: Appointment Bottlenecks</h3>
-          <p class="problem-text">
-            Manual scheduling creates delays, conflicts, and poor resource
-            utilization
-          </p>
-          <div class="solution-arrow">
-            <i class="fas fa-arrow-down"></i>
-          </div>
-          <div class="solution-icon solution">
-            <i class="fas fa-calendar-check"></i>
-          </div>
-          <h3>Solution: Automated Scheduling</h3>
-          <p class="solution-text">
-            Cloud-automated appointment system with intelligent slot
-            management, real-time availability, and instant confirmation
-          </p>
-          <ul class="solution-features">
-            <li><i class="fas fa-check"></i> Real-time availability</li>
-            <li><i class="fas fa-check"></i> Automated reminders</li>
-            <li><i class="fas fa-check"></i> Easy rescheduling</li>
-          </ul>
-          <button class="solution-btn" onclick="scrollToSection('appointments')">
-            Book Appointment
-          </button>
-        </div>
-
-        <!-- Solution 3: Patient Communication -->
-        <div class="solution-card" data-aos="fade-up" data-aos-delay="300">
-          <div class="solution-icon problem">
-            <i class="fas fa-exclamation-triangle"></i>
-          </div>
-          <h3>Problem: Communication Gaps</h3>
-          <p class="problem-text">
-            Limited availability of healthcare staff for patient queries and
-            follow-ups
-          </p>
-          <div class="solution-arrow">
-            <i class="fas fa-arrow-down"></i>
-          </div>
-          <div class="solution-icon solution">
-            <i class="fas fa-robot"></i>
-          </div>
-          <h3>Solution: AI Chat Assistant</h3>
-          <p class="solution-text">
-            24/7 intelligent chatbot powered by Google Gemini for instant
-            patient engagement, queries, and health monitoring
-          </p>
-          <ul class="solution-features">
-            <li><i class="fas fa-check"></i> 24/7 availability</li>
-            <li><i class="fas fa-check"></i> Multi-language support</li>
-            <li><i class="fas fa-check"></i> Personalized responses</li>
-          </ul>
-          <button class="solution-btn" onclick="scrollToSection('ai-chat')">
-            Start Chatting
-          </button>
         </div>
       </div>
     </div>
@@ -1337,23 +1212,8 @@
         </button>
       </div>
 
-      <div class="auth-divider">
-        <span>OR</span>
-      </div>
-
       <div class="auth-form">
         <div id="authError" style="display:none; color: #dc2626; background: #fee2e2; padding: 10px; border-radius: 8px; margin-bottom: 15px; font-size: 0.9rem; text-align: center;"></div>
-
-        <div class="form-group" style="margin-bottom: 15px;">
-            <input type="email" id="authEmail" placeholder="Email Address" class="form-control" style="width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #e2e8f0;">
-        </div>
-        <div class="form-group" style="margin-bottom: 20px;">
-            <input type="password" id="authPassword" placeholder="Password" class="form-control" style="width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #e2e8f0;">
-        </div>
-
-        <button class="btn btn-primary" onclick="handleEmailLogin()" id="btnEmailLogin" style="width: 100%; padding: 12px; border-radius: 10px;">
-            Sign In / Sign Up
-        </button>
       </div>
 
       <p style="text-align: center; color: #64748b; font-size: 0.8rem; margin-top: 20px;">
