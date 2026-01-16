@@ -14,9 +14,16 @@ const getConfig = () => {
     return {
       API_BASE_URL: window.ENV.API_BASE_URL || "http://localhost:5000/api",
       USER_ID: "user_" + Math.random().toString(36).substr(2, 9),
-      AI_ENABLED: window.ENV.APP?.AI_ENABLED !== undefined ? window.ENV.APP.AI_ENABLED : true,
+      AI_ENABLED:
+        window.ENV.APP?.AI_ENABLED !== undefined
+          ? window.ENV.APP.AI_ENABLED
+          : true,
       MAX_FILE_SIZE: window.ENV.APP?.MAX_FILE_SIZE || 10 * 1024 * 1024, // 10MB
-      SUPPORTED_FORMATS: window.ENV.APP?.SUPPORTED_FORMATS || ["image/jpeg", "image/png", "image/webp"],
+      SUPPORTED_FORMATS: window.ENV.APP?.SUPPORTED_FORMATS || [
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+      ],
     };
   }
 
@@ -33,10 +40,42 @@ const getConfig = () => {
 const CONFIG = getConfig();
 
 // ========================================
+// UTILITY: FETCH WITH TIMEOUT
+// ========================================
+/**
+ * Fetch with automatic timeout to prevent hanging requests
+ * @param {string} url - API endpoint URL
+ * @param {object} options - Fetch options (method, headers, body, etc.)
+ * @param {number} timeoutMs - Timeout in milliseconds (default: 10000)
+ * @returns {Promise<Response>}
+ */
+async function fetchWithTimeout(url, options = {}, timeoutMs = 10000) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    return response;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error.name === "AbortError") {
+      throw new Error(
+        "Request timed out. Please check your connection and try again."
+      );
+    }
+    throw error;
+  }
+}
+
+// ========================================
 // STATE MANAGEMENT
 // ========================================
 const state = {
-  currentUser: CONFIG.USER_ID,
+  currentUser: null, // Will be set by Firebase auth
   chatHistory: [],
   currentImage: null,
   appointments: [],
@@ -46,30 +85,134 @@ const state = {
 };
 
 // ========================================
-// INITIALIZATION
+// INITIALIZATION - PRODUCTION GRADE
 // ========================================
-document.addEventListener("DOMContentLoaded", function () {
-  console.log("🏥 MedicSense AI Ultra - Initialized");
-  console.log("🧠 Problem Statement Solution Active");
 
-  initializeApp();
-  setupEventListeners();
-  updateSeverityDisplay();
+// Centralized loader control - SINGLE SOURCE OF TRUTH
+const LoaderManager = {
+  hidden: false,
 
-  // Show welcome notification
-  // Show welcome notification removed as per request
-  /*
-  setTimeout(() => {
-    showToast(
-      "Welcome to MedicSense AI! Solving healthcare automation challenges.",
-      "success"
-    );
-  }, 1500);
-  */
+  hide() {
+    if (this.hidden) return; // Prevent multiple calls
+
+    console.log("� Hiding loader...");
+    const loader = document.getElementById("loadingScreen");
+    if (loader) {
+      loader.style.opacity = "0";
+      loader.style.transition = "opacity 0.3s ease-out";
+      setTimeout(() => {
+        loader.style.display = "none";
+        this.hidden = true;
+        console.log("✅ Loader hidden");
+      }, 300);
+    }
+
+    // Clear safety watchdog
+    if (window.clearLoaderSafety) {
+      window.clearLoaderSafety();
+    }
+  },
+
+  showError(message) {
+    const loader = document.getElementById("loadingScreen");
+    if (loader && !this.hidden) {
+      const subtext = loader.querySelector(".loading-subtext");
+      if (subtext) {
+        subtext.textContent = message;
+        subtext.style.color = "#ef4444";
+      }
+    }
+  },
+};
+
+// Critical initialization that MUST complete
+async function initializeCriticalSystems() {
+  console.log("🏥 MedicSense AI - Starting critical initialization");
+
+  try {
+    // 1. Core synchronous initialization
+    initializeAppCore();
+    setupEventListeners();
+    updateSeverityDisplay();
+    initAuthModal();
+
+    console.log("✅ Core systems initialized");
+    return true;
+  } catch (error) {
+    console.error("🔥 CRITICAL: Core initialization failed", error);
+    LoaderManager.showError("Initialization failed. Retrying...");
+    return false;
+  }
+}
+
+// Optional async services that can fail gracefully
+async function initializeOptionalSystems() {
+  console.log("🔧 Loading optional systems...");
+
+  // Auth system (can fail gracefully)
+  try {
+    await initializeAuthWithTimeout(5000); // 5 second timeout
+    console.log("✅ Auth system ready");
+  } catch (error) {
+    console.warn("⚠️ Auth system failed to load:", error);
+    console.warn("⚠️ App will continue in guest mode");
+  }
+
+  // Notifications (optional, non-blocking)
+  try {
+    await loadNotificationCountSafe();
+    console.log("✅ Notifications loaded");
+  } catch (error) {
+    console.warn("⚠️ Notifications unavailable:", error);
+  }
+}
+
+// Main initialization orchestrator
+document.addEventListener("DOMContentLoaded", async function () {
+  console.log("🚀 DOM Ready - Starting initialization sequence");
+
+  try {
+    // Phase 1: Critical systems (MUST succeed)
+    const criticalSuccess = await initializeCriticalSystems();
+
+    if (!criticalSuccess) {
+      throw new Error("Critical systems failed");
+    }
+
+    // Phase 2: Hide loader immediately after critical systems ready
+    // Don't wait for optional services
+    LoaderManager.hide();
+
+    // Phase 3: Load optional systems in background (non-blocking)
+    initializeOptionalSystems().catch((err) => {
+      console.warn("⚠️ Some optional services failed:", err);
+    });
+
+    console.log("✅ App initialized successfully");
+  } catch (error) {
+    console.error("🔥 FATAL: App initialization failed", error);
+
+    // Force hide loader and show error
+    LoaderManager.hide();
+
+    // Show user-visible error
+    setTimeout(() => {
+      if (typeof showToast === "function") {
+        showToast(
+          "App loaded with limited functionality. Some features may be unavailable.",
+          "warning"
+        );
+      } else {
+        alert(
+          "App loaded with limited functionality. Please refresh if issues persist."
+        );
+      }
+    }, 500);
+  }
 });
 
-function initializeApp() {
-  // Load saved data from localStorage
+function initializeAppCore() {
+  console.log("📦 Loading user data...");
   loadUserData();
 
   // Initialize chat with welcome message
@@ -77,9 +220,6 @@ function initializeApp() {
   if (chatMessages) {
     // Welcome message already in HTML
   }
-
-  // Load notification count
-  loadNotificationCount();
 
   // Set up smooth scroll
   document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
@@ -91,6 +231,146 @@ function initializeApp() {
       }
     });
   });
+
+  console.log("✅ Core app initialized");
+}
+
+// ========================================
+// AUTHENTICATION INITIALIZATION - WITH TIMEOUT
+// ========================================
+
+// Timeout wrapper for Firebase initialization
+function initializeAuthWithTimeout(timeoutMs = 5000) {
+  return new Promise((resolve, reject) => {
+    let resolved = false;
+
+    // Timeout safety
+    const timeout = setTimeout(() => {
+      if (!resolved) {
+        resolved = true;
+        console.warn(`⚠️ Auth initialization timed out after ${timeoutMs}ms`);
+        reject(new Error("Auth initialization timeout"));
+      }
+    }, timeoutMs);
+
+    // Try to initialize auth
+    const tryInit = () => {
+      if (resolved) return;
+
+      if (window.firebaseAuth) {
+        clearTimeout(timeout);
+        resolved = true;
+        setupAuthListener();
+        resolve();
+      } else {
+        console.log("⏳ Waiting for Firebase to load...");
+
+        // Set up one-time listener with timeout
+        const onReady = () => {
+          if (resolved) return;
+          clearTimeout(timeout);
+          resolved = true;
+          console.log("✅ Firebase ready event received");
+          setupAuthListener();
+          resolve();
+        };
+
+        window.addEventListener("firebase-ready", onReady, { once: true });
+
+        // Also check periodically in case event was missed
+        let checks = 0;
+        const checkInterval = setInterval(() => {
+          checks++;
+          if (resolved || checks > 10) {
+            clearInterval(checkInterval);
+            return;
+          }
+
+          if (window.firebaseAuth) {
+            clearInterval(checkInterval);
+            clearTimeout(timeout);
+            resolved = true;
+            setupAuthListener();
+            resolve();
+          }
+        }, 500);
+      }
+    };
+
+    tryInit();
+  });
+}
+
+function setupAuthListener() {
+  if (!window.firebaseAuth) {
+    console.error("❌ Firebase auth not available");
+    return;
+  }
+
+  const { auth, onAuthStateChanged } = window.firebaseAuth;
+
+  console.log("🔐 Setting up auth state listener...");
+
+  // THIS IS THE SINGLE SOURCE OF TRUTH FOR AUTH STATE
+  onAuthStateChanged(auth, (user) => {
+    console.log(
+      "🔐 Auth state changed:",
+      user ? `Logged in as ${user.email || user.uid}` : "Logged out"
+    );
+
+    if (user) {
+      // User is authenticated
+      state.currentUser = user.uid;
+      updateAuthUI(user);
+
+      // Close auth modal if open
+      const modal = document.getElementById("authModal");
+      if (modal && modal.style.display === "flex") {
+        closeAuthModal();
+        showToast("Welcome back!", "success");
+      }
+
+      // Save user ID to localStorage
+      localStorage.setItem("medicsense_user_id", user.uid);
+
+      // Load notifications now that user is authenticated
+      loadNotificationCountSafe().catch((err) => {
+        console.warn("⚠️ Failed to load notifications:", err);
+      });
+    } else {
+      // User is logged out
+      state.currentUser = null;
+      updateAuthUI(null);
+
+      // Restore auth modal to login state
+      restoreAuthModal();
+    }
+
+    // Always reset loading state when auth resolves
+    setAuthLoading(false);
+  });
+}
+
+// Helper functions for safe user data extraction
+function getSafeName(user) {
+  if (!user) return "Guest";
+  if (user.displayName) return user.displayName;
+  if (user.email) return user.email.split("@")[0];
+  if (user.phoneNumber) return user.phoneNumber;
+  return "User";
+}
+
+function getSafeEmail(user) {
+  if (!user) return "";
+  return user.email || user.phoneNumber || "No email";
+}
+
+function getSafePhotoURL(user) {
+  if (!user) return null;
+  if (user.photoURL) return user.photoURL;
+  const name = getSafeName(user);
+  const encoded = encodeURIComponent(name);
+  return `https://ui-avatars.com/api/?name=${encoded}&background=667eea&color=fff&bold=true`;
 }
 
 // ========================================
@@ -118,51 +398,76 @@ function toggleSearch() {
 }
 
 function showNotifications() {
-  window.location.href = 'notifications.html';
+  window.location.href = "notifications.html";
 }
 
-// Load notification count on page load
-async function loadNotificationCount() {
+// Load notification count with timeout and error handling
+async function loadNotificationCountSafe() {
   try {
     let userId = state.currentUser;
-    try {
-      const { auth } = await import('./firebase_config.js');
-      if (auth.currentUser) {
-        userId = auth.currentUser.uid;
+
+    // Don't load if no user logged in
+    if (!userId) {
+      const badge = document.getElementById("notificationBadge");
+      if (badge) {
+        badge.style.display = "none";
       }
-    } catch (e) {
-      console.log('Firebase not available, using default user ID');
+      return;
     }
 
-    const response = await fetch(`${CONFIG.API_BASE_URL}/notifications/${userId}`);
+    // Add timeout to fetch
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+
+    const response = await fetch(
+      `${CONFIG.API_BASE_URL}/notifications/${userId}`,
+      { signal: controller.signal }
+    );
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
     const data = await response.json();
 
     if (data.success && data.data) {
-      const unreadCount = data.data.filter(n => !n.read).length;
-      const badge = document.getElementById('notificationBadge');
+      const unreadCount = data.data.filter((n) => !n.read).length;
+      const badge = document.getElementById("notificationBadge");
       if (badge) {
         if (unreadCount > 0) {
-          badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
-          badge.style.display = 'flex';
+          badge.textContent = unreadCount > 99 ? "99+" : unreadCount;
+          badge.style.display = "flex";
         } else {
-          badge.textContent = '';
-          badge.style.display = 'none';
+          badge.textContent = "";
+          badge.style.display = "none";
         }
       }
     }
   } catch (error) {
-    console.error('Error loading notification count:', error);
-    // Hide badge on error
-    const badge = document.getElementById('notificationBadge');
+    if (error.name === "AbortError") {
+      console.warn("⚠️ Notification loading timed out");
+    } else {
+      console.warn("⚠️ Could not load notifications:", error.message);
+    }
+
+    // Hide badge on error (fail gracefully)
+    const badge = document.getElementById("notificationBadge");
     if (badge) {
-      badge.style.display = 'none';
+      badge.style.display = "none";
     }
   }
 }
 
+// Legacy function for backward compatibility - now calls safe version
+async function loadNotificationCount() {
+  return loadNotificationCountSafe();
+}
+
 // Refresh notification count periodically (every 30 seconds)
 setInterval(() => {
-  if (document.visibilityState === 'visible') {
+  if (document.visibilityState === "visible") {
     loadNotificationCount();
   }
 }, 30000);
@@ -230,14 +535,18 @@ async function analyzeSymptoms() {
       '<div class="loading-spinner"></div><p>Analyzing with Google Gemini AI...</p>';
 
   try {
-    const response = await fetch(`${CONFIG.API_BASE_URL}/chat`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        message: `Analyze these symptoms: ${symptoms}. Duration: ${durationValue}. Severity: ${severityValue}/10.`,
-        user_id: state.currentUser,
-      }),
-    });
+    const response = await fetchWithTimeout(
+      `${CONFIG.API_BASE_URL}/chat`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: `Analyze these symptoms: ${symptoms}. Duration: ${durationValue}. Severity: ${severityValue}/10.`,
+          user_id: state.currentUser,
+        }),
+      },
+      15000
+    ); // 15 second timeout for AI analysis
 
     const data = await response.json();
 
@@ -284,20 +593,26 @@ function displaySymptomResults(analysis, severity) {
         </div>
         <div class="analysis-content">
             <h4><i class="fas fa-brain"></i> AI Analysis</h4>
-            <div class="analysis-text">${typeof marked !== 'undefined' ? marked.parse(analysis) : analysis.replace(/\n/g, '<br>')}</div>
+            <div class="analysis-text">${
+              typeof marked !== "undefined"
+                ? marked.parse(analysis)
+                : analysis.replace(/\n/g, "<br>")
+            }</div>
         </div>
         <div class="recommendations">
             <h4><i class="fas fa-lightbulb"></i> Recommendations</h4>
             <ul>
-                <li><i class="fas fa-check"></i> ${severity > 7
-      ? "Seek immediate medical attention"
-      : "Monitor symptoms closely"
-    }</li>
+                <li><i class="fas fa-check"></i> ${
+                  severity > 7
+                    ? "Seek immediate medical attention"
+                    : "Monitor symptoms closely"
+                }</li>
                 <li><i class="fas fa-check"></i> Stay hydrated and rest</li>
-                <li><i class="fas fa-check"></i> ${severity > 5
-      ? "Consider booking an appointment"
-      : "Track your symptoms"
-    }</li>
+                <li><i class="fas fa-check"></i> ${
+                  severity > 5
+                    ? "Consider booking an appointment"
+                    : "Track your symptoms"
+                }</li>
             </ul>
         </div>
     `;
@@ -390,7 +705,13 @@ async function loadAvailableSlots() {
 
   try {
     // Call API to get available slots
-    const response = await fetch(`${CONFIG.API_BASE_URL}/appointments/slots?doctor=${encodeURIComponent(doctorSelect.value)}&date=${encodeURIComponent(dateInput.value)}`);
+    const response = await fetchWithTimeout(
+      `${CONFIG.API_BASE_URL}/appointments/slots?doctor=${encodeURIComponent(
+        doctorSelect.value
+      )}&date=${encodeURIComponent(dateInput.value)}`,
+      {},
+      5000 // 5 second timeout
+    );
     const data = await response.json();
 
     let slots = [];
@@ -519,33 +840,33 @@ async function bookAppointment() {
   showToast("Booking your appointment...", "info");
 
   try {
-    // Get user ID from Firebase auth or use default
+    // Get user ID - use Firebase UID if logged in, otherwise generate temporary ID
     let userId = state.currentUser;
-    try {
-      const { auth } = await import('./firebase_config.js');
-      if (auth.currentUser) {
-        userId = auth.currentUser.uid;
-      }
-    } catch (e) {
-      console.log('Firebase not available, using default user ID');
+    if (!userId) {
+      userId = "guest_" + Math.random().toString(36).substr(2, 9);
+      console.warn("⚠️ Booking as guest user. Login recommended for tracking.");
     }
 
     // Call backend API to book appointment
-    const response = await fetch(`${CONFIG.API_BASE_URL}/appointments/book`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        userId: userId,
-        name,
-        phone,
-        email,
-        doctorId: doctor,
-        date,
-        time,
-        reason,
-        type,
-      }),
-    });
+    const response = await fetchWithTimeout(
+      `${CONFIG.API_BASE_URL}/appointments/book`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: userId,
+          name,
+          phone,
+          email,
+          doctorId: doctor,
+          date,
+          time,
+          reason,
+          type,
+        }),
+      },
+      10000
+    ); // 10 second timeout
 
     const data = await response.json();
 
@@ -676,21 +997,27 @@ async function sendChatMessage(quickMessage = null) {
 
   try {
     // Get or create session ID for AI agent scaling
-    let sessionId = localStorage.getItem('chat_session_id');
+    let sessionId = localStorage.getItem("chat_session_id");
     if (!sessionId) {
-      sessionId = `chat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      localStorage.setItem('chat_session_id', sessionId);
+      sessionId = `chat_${Date.now()}_${Math.random()
+        .toString(36)
+        .substr(2, 9)}`;
+      localStorage.setItem("chat_session_id", sessionId);
     }
 
-    const response = await fetch(`${CONFIG.API_BASE_URL}/chat`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        message: message,
-        user_id: state.currentUser,
-        session_id: sessionId,
-      }),
-    });
+    const response = await fetchWithTimeout(
+      `${CONFIG.API_BASE_URL}/chat`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: message,
+          user_id: state.currentUser,
+          session_id: sessionId,
+        }),
+      },
+      15000
+    ); // 15 second timeout for AI chat
 
     const data = await response.json();
 
@@ -760,7 +1087,10 @@ function addMessageToChat(role, content, metadata = {}) {
       <img src="${metadata.image}" alt="Uploaded image" style="max-width: 100%; border-radius: 8px; margin-top: 8px; max-height: 300px; object-fit: contain;">
     `;
   } else if (role === "ai") {
-    bubbleDiv.innerHTML = typeof marked !== 'undefined' ? marked.parse(content) : content.replace(/\n/g, '<br>');
+    bubbleDiv.innerHTML =
+      typeof marked !== "undefined"
+        ? marked.parse(content)
+        : content.replace(/\n/g, "<br>");
   } else {
     bubbleDiv.textContent = content;
   }
@@ -769,17 +1099,19 @@ function addMessageToChat(role, content, metadata = {}) {
   metaDiv.className = "message-meta";
   metaDiv.innerHTML = `
         <span class="message-time">${new Date().toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit",
-  })}</span>
-        ${metadata.context
-      ? `<span class="context-badge"><i class="fas fa-tag"></i> ${metadata.context}</span>`
-      : ""
-    }
-        ${metadata.severity && metadata.severity !== "low"
-      ? `<span class="severity-badge ${metadata.severity}"><i class="fas fa-exclamation-circle"></i> ${metadata.severity}</span>`
-      : ""
-    }
+          hour: "2-digit",
+          minute: "2-digit",
+        })}</span>
+        ${
+          metadata.context
+            ? `<span class="context-badge"><i class="fas fa-tag"></i> ${metadata.context}</span>`
+            : ""
+        }
+        ${
+          metadata.severity && metadata.severity !== "low"
+            ? `<span class="severity-badge ${metadata.severity}"><i class="fas fa-exclamation-circle"></i> ${metadata.severity}</span>`
+            : ""
+        }
     `;
 
   contentDiv.appendChild(bubbleDiv);
@@ -925,13 +1257,13 @@ async function handleChatImageUpload(event) {
   try {
     // Convert image to base64
     const reader = new FileReader();
-    reader.onload = async function(e) {
+    reader.onload = async function (e) {
       const imageDataUrl = e.target.result;
 
       // Add user message showing image was uploaded
       addMessageToChat("user", "📸 [Image uploaded for analysis]", {
         context: "image-upload",
-        image: imageDataUrl
+        image: imageDataUrl,
       });
 
       // Show typing indicator
@@ -939,14 +1271,19 @@ async function handleChatImageUpload(event) {
 
       try {
         // Call backend API with Gemini for disease recognition
-        const response = await fetch(`${CONFIG.API_BASE_URL}/analyze-injury-image`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            image: imageDataUrl,
-            notes: "Please analyze this medical image for disease recognition and provide detailed insights."
-          }),
-        });
+        const response = await fetchWithTimeout(
+          `${CONFIG.API_BASE_URL}/analyze-injury-image`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              image: imageDataUrl,
+              notes:
+                "Please analyze this medical image for disease recognition and provide detailed insights.",
+            }),
+          },
+          20000 // 20 second timeout for image analysis
+        );
 
         const data = await response.json();
 
@@ -955,7 +1292,9 @@ async function handleChatImageUpload(event) {
         if (data.success) {
           // Format the Gemini AI response with disease recognition
           let analysisMessage = `📸 **Disease Recognition & Image Analysis**\n\n`;
-          analysisMessage += `**Primary Condition:** ${data.injury_type || 'Not specified'}\n`;
+          analysisMessage += `**Primary Condition:** ${
+            data.injury_type || "Not specified"
+          }\n`;
 
           if (data.possible_conditions && data.possible_conditions.length > 0) {
             analysisMessage += `**Possible Conditions:**\n`;
@@ -965,11 +1304,18 @@ async function handleChatImageUpload(event) {
             analysisMessage += `\n`;
           }
 
-          analysisMessage += `**Severity:** ${data.severity || 'Not specified'}\n`;
+          analysisMessage += `**Severity:** ${
+            data.severity || "Not specified"
+          }\n`;
           analysisMessage += `**Confidence:** ${data.confidence || 0}%\n\n`;
-          analysisMessage += `**Visual Description:**\n${data.description || 'No description available'}\n\n`;
+          analysisMessage += `**Visual Description:**\n${
+            data.description || "No description available"
+          }\n\n`;
 
-          if (data.disease_characteristics && data.disease_characteristics.length > 0) {
+          if (
+            data.disease_characteristics &&
+            data.disease_characteristics.length > 0
+          ) {
             analysisMessage += `**Disease Characteristics:**\n`;
             data.disease_characteristics.forEach((char, idx) => {
               analysisMessage += `• ${char}\n`;
@@ -1004,18 +1350,25 @@ async function handleChatImageUpload(event) {
           addMessageToChat("ai", analysisMessage, {
             context: "image-analysis",
             severity: data.severity,
-            injury_type: data.injury_type
+            injury_type: data.injury_type,
           });
-          showToast("Image analyzed successfully with Gemini AI for disease recognition!", "success");
+          showToast(
+            "Image analyzed successfully with Gemini AI for disease recognition!",
+            "success"
+          );
         } else {
           throw new Error(data.error || "No analysis from AI");
         }
       } catch (error) {
         hideTypingIndicator();
         console.error("Error analyzing image:", error);
-        addMessageToChat("ai", "❌ Sorry, I encountered an error analyzing the image. Please try again.", {
-          context: "error"
-        });
+        addMessageToChat(
+          "ai",
+          "❌ Sorry, I encountered an error analyzing the image. Please try again.",
+          {
+            context: "error",
+          }
+        );
         showToast("Error analyzing image. Please try again.", "error");
       }
     };
@@ -1051,29 +1404,171 @@ function closeEmergencyModal() {
 function emergencyChat() {
   closeEmergencyModal();
   scrollToSection("ai-chat");
+
+  // Generate session ID for emergency tracking
+  const sessionId =
+    Date.now().toString() + "_" + Math.random().toString(36).substr(2, 9);
+
   setTimeout(() => {
-    sendChatMessage("This is an emergency! I need immediate help!");
+    // BACKEND EMERGENCY MODE: Activate strict emergency context
+    const emergencyMessage = "I need urgent help!";
+
+    fetch("http://localhost:5000/api/emergency/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        session_id: sessionId,
+        message: emergencyMessage,
+      }),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.success) {
+          // Display strict emergency response from backend
+          displayChatMessage(data.response, "ai");
+
+          // Visual indicator for emergency mode
+          if (data.emergency_mode) {
+            showToast(
+              "⚠️ EMERGENCY MODE: Call 112 immediately",
+              "error",
+              10000
+            );
+          }
+        } else {
+          // Fallback if backend fails
+          displayChatMessage(
+            "🚨 CALL 112 IMMEDIATELY\n\n" +
+              "System error occurred. Emergency services must be contacted directly. " +
+              "Do NOT rely on AI in emergency situations.",
+            "ai"
+          );
+        }
+      })
+      .catch((error) => {
+        console.error("Emergency chat error:", error);
+        // Critical fallback
+        displayChatMessage(
+          "🚨 CALL 112 IMMEDIATELY\n\n" +
+            "System unavailable. Contact emergency services now. " +
+            "This is NOT a substitute for professional help.",
+          "ai"
+        );
+      });
   }, 500);
 }
 
 function findNearestHospital() {
-  if ("geolocation" in navigator) {
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const { latitude, longitude } = position.coords;
-        const mapsUrl = `https://www.google.com/maps/search/hospitals+near+me/@${latitude},${longitude},15z`;
-        window.open(mapsUrl, "_blank");
-        showToast("Opening nearby hospitals...", "success");
-      },
-      (error) => {
-        showToast(
-          "Unable to get your location. Please enable location services.",
-          "error"
-        );
-      }
-    );
-  } else {
-    showToast("Geolocation not supported", "error");
+  const fallbackUrl =
+    "https://www.google.com/maps/search/emergency+room+near+me/";
+
+  if (!("geolocation" in navigator)) {
+    window.open(fallbackUrl, "_blank");
+    showToast("Opening map search (Location not supported)", "warning");
+    return;
+  }
+
+  showToast("Locating nearest emergency rooms...", "info");
+
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      const { latitude, longitude } = position.coords;
+
+      // Try backend hospital lookup first
+      fetch("http://localhost:5000/api/emergency/hospitals", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ latitude, longitude }),
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          if (
+            data.status === "fallback" ||
+            data.action === "redirect_to_maps"
+          ) {
+            // Backend returned safe fallback - use Google Maps
+            const mapsUrl =
+              data.fallback_url ||
+              `https://www.google.com/maps/search/emergency+room/@${latitude},${longitude},15z`;
+            window.open(mapsUrl, "_blank");
+            showToast(data.message || "Opening emergency room search", "info");
+          } else {
+            // Backend provided real hospital data (future implementation)
+            window.open(
+              `https://www.google.com/maps/search/emergency+room/@${latitude},${longitude},15z`,
+              "_blank"
+            );
+            showToast("Found nearest emergency centers", "success");
+          }
+        })
+        .catch((error) => {
+          console.error("Hospital lookup error:", error);
+          // Safe fallback on error
+          const mapsUrl = `https://www.google.com/maps/search/emergency+room/@${latitude},${longitude},15z`;
+          window.open(mapsUrl, "_blank");
+          showToast("Opening emergency room search", "info");
+        });
+    },
+    (error) => {
+      console.error("Geolocation error:", error);
+      window.open(fallbackUrl, "_blank");
+      showToast("Location unavailable, opening map search", "warning");
+    }
+  );
+}
+
+// Handler for Call Button (to be attached via listener)
+function handleEmergencyCall(e) {
+  // Log emergency escalation to backend
+  const sessionId =
+    Date.now().toString() + "_" + Math.random().toString(36).substr(2, 9);
+
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      fetch("http://localhost:5000/api/emergency/escalate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user_id:
+            state.currentUser ||
+            "guest_" + Math.random().toString(36).substr(2, 9),
+          session_id: sessionId,
+          location: {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          },
+        }),
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.success) {
+            console.log("Emergency escalation logged:", data.emergency_id);
+          }
+        })
+        .catch((error) => {
+          console.error("Emergency logging error:", error);
+        });
+    },
+    (error) => {
+      // Log without location if unavailable
+      fetch("http://localhost:5000/api/emergency/escalate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user_id:
+            state.currentUser ||
+            "guest_" + Math.random().toString(36).substr(2, 9),
+          session_id: sessionId,
+          location: null,
+        }),
+      }).catch((err) => console.error("Emergency logging error:", err));
+    }
+  );
+
+  // Show toast for desktop users
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  if (!isMobile) {
+    showToast("Dial 112 on your phone immediately", "info");
   }
 }
 
@@ -1174,6 +1669,8 @@ function loadUserData() {
 
     const savedSymptoms = localStorage.getItem("medicsense_symptoms");
     if (savedSymptoms) state.symptoms = JSON.parse(savedSymptoms);
+
+    console.log("📦 User data loaded from localStorage");
   } catch (error) {
     console.error("Error loading user data:", error);
   }
@@ -1232,21 +1729,438 @@ if (performance.navigation.type === 1) {
 // Log performance metrics
 window.addEventListener("load", function () {
   setTimeout(() => {
+    // Log performance
     const perfData = performance.timing;
     const pageLoadTime = perfData.loadEventEnd - perfData.navigationStart;
     console.log(`⚡ Page Load Time: ${pageLoadTime}ms`);
-  }, 0);
+
+    // Hide Loading Screen
+    const loader = document.getElementById("loadingScreen");
+    if (loader) {
+      loader.style.opacity = "0";
+      loader.style.transition = "opacity 0.5s ease";
+      setTimeout(() => {
+        loader.style.display = "none";
+      }, 500);
+    }
+  }, 500); // 500ms minimum show time for branding
 });
 
-// Auth functions are handled in auth_logic.js
+// ========================================
+// AUTHENTICATION FUNCTIONS (Production Ready)
+// ========================================
+
+// Store original modal content once at page load
+let originalAuthModalContent = null;
+
+function initAuthModal() {
+  const modal = document.getElementById("authModal");
+  const modalContent = modal?.querySelector(".auth-modal");
+  if (modalContent && !originalAuthModalContent) {
+    originalAuthModalContent = modalContent.innerHTML;
+    console.log("✅ Original auth modal content saved");
+  }
+}
+
+function openAuthModal() {
+  const modal = document.getElementById("authModal");
+  if (modal) {
+    modal.style.display = "flex";
+    document.body.style.overflow = "hidden"; // Prevent background scroll
+  }
+}
+
+function closeAuthModal() {
+  const modal = document.getElementById("authModal");
+  if (modal) {
+    modal.style.display = "none";
+    document.body.style.overflow = ""; // Restore scroll
+  }
+}
+
+function restoreAuthModal() {
+  const modal = document.getElementById("authModal");
+  const modalContent = modal?.querySelector(".auth-modal");
+
+  if (modalContent && originalAuthModalContent) {
+    modalContent.innerHTML = originalAuthModalContent;
+    console.log("✅ Auth modal restored to original state");
+  }
+}
+
+async function handleEmailLogin() {
+  if (!window.firebaseAuth) {
+    showToast("System initializing... please wait.", "warning");
+    return;
+  }
+
+  const emailEl = document.getElementById("authEmail");
+  const passEl = document.getElementById("authPassword");
+
+  const email = emailEl ? emailEl.value.trim() : "";
+  const password = passEl ? passEl.value : "";
+
+  if (!email || !password) {
+    showAuthError("Please enter both email and password");
+    return;
+  }
+
+  if (password.length < 6) {
+    showAuthError("Password must be at least 6 characters");
+    return;
+  }
+
+  const { auth, signInWithEmailAndPassword, createUserWithEmailAndPassword } =
+    window.firebaseAuth;
+
+  setAuthLoading(true);
+
+  try {
+    // Try to sign in first
+    await signInWithEmailAndPassword(auth, email, password);
+    // Don't close modal or show toast here - onAuthStateChanged will handle it
+  } catch (error) {
+    setAuthLoading(false);
+
+    // Security fix: Normalize all authentication failures to prevent user enumeration
+    if (
+      error.code === "auth/user-not-found" ||
+      error.code === "auth/invalid-credential" ||
+      error.code === "auth/wrong-password" ||
+      error.code === "auth/invalid-email"
+    ) {
+      // Generic message - does not reveal if email exists or password is wrong
+      showAuthError(
+        "Unable to sign in. Please check your credentials and try again."
+      );
+    } else if (error.code === "auth/too-many-requests") {
+      showAuthError(
+        "Too many attempts. Please try again later or reset your password."
+      );
+    } else {
+      showAuthError(getReadableAuthError(error));
+    }
+  }
+}
+
+async function handleGoogleLogin() {
+  if (!window.firebaseAuth) {
+    showToast("System initializing... please wait.", "warning");
+    return;
+  }
+
+  const { auth, signInWithPopup, GoogleAuthProvider } = window.firebaseAuth;
+  const provider = new GoogleAuthProvider();
+
+  try {
+    setAuthLoading(true);
+    await signInWithPopup(auth, provider);
+    // Don't close modal or show toast here - onAuthStateChanged will handle it
+  } catch (error) {
+    setAuthLoading(false);
+    console.error("LOGIN ERROR", error);
+
+    if (error.code === "auth/popup-closed-by-user") {
+      console.log("User cancelled sign-in popup");
+      // Don't show toast - user intentionally cancelled
+    } else if (error.code === "auth/network-request-failed") {
+      showAuthError("No internet connection. Please check your network.");
+    } else {
+      showAuthError("Google Sign-In failed: " + error.message);
+    }
+  }
+}
+
+function updateAuthUI(user) {
+  const authBtn = document.getElementById("authBtn");
+  if (!authBtn) return;
+
+  if (user) {
+    const name = getSafeName(user);
+    const email = getSafeEmail(user);
+    const photoURL = getSafePhotoURL(user);
+
+    authBtn.innerHTML = `<img src="${photoURL}" alt="${name}" style="width: 32px; height: 32px; border-radius: 50%; border: 2px solid white; object-fit: cover;">`;
+    authBtn.title = `Signed in as ${email}`;
+    authBtn.onclick = () => showProfileModal(user);
+  } else {
+    authBtn.innerHTML = '<i class="fas fa-user-circle"></i>';
+    authBtn.title = "Sign In";
+    authBtn.onclick = openAuthModal;
+  }
+}
+
+function showProfileModal(user) {
+  const modal = document.getElementById("authModal");
+  const modalContent = modal?.querySelector(".auth-modal");
+
+  if (!modalContent) {
+    console.error("❌ Auth modal content not found");
+    return;
+  }
+
+  const name = getSafeName(user);
+  const email = getSafeEmail(user);
+  const photoURL = getSafePhotoURL(user);
+
+  modalContent.innerHTML = `
+        <button class="modal-close" onclick="closeAuthModal()">
+            <i class="fas fa-times"></i>
+        </button>
+        <div class="auth-header" style="text-align: center;">
+            <img src="${photoURL}" alt="Profile" style="width: 80px; height: 80px; border-radius: 50%; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); object-fit: cover;">
+            <h3 style="margin-bottom: 5px; color: #1e293b;">${name}</h3>
+            <p style="color: #64748b; margin: 0;">${email}</p>
+        </div>
+
+        <div class="auth-options">
+            <button id="btnSignOut" class="auth-btn-google" onclick="handleLogout()" style="justify-content: center; background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; font-weight: 500;">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Sign Out</span>
+            </button>
+        </div>
+
+        <div style="margin-top: 20px; text-align: center;">
+            <p style="font-size: 0.8rem; color: #cbd5e1;">MedicSense AI • Secure Session</p>
+        </div>
+    `;
+
+  openAuthModal();
+}
+
+async function handleLogout() {
+  const btn = document.getElementById("btnSignOut");
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML =
+      '<i class="fas fa-circle-notch fa-spin"></i> <span>Signing out...</span>';
+    btn.style.opacity = "0.7";
+  }
+
+  try {
+    if (window.firebaseAuth) {
+      await window.firebaseAuth.signOut(window.firebaseAuth.auth);
+    }
+
+    // CLEAR ALL STATE - CRITICAL FOR SECURITY
+    state.currentUser = null;
+    state.chatHistory = [];
+    state.appointments = [];
+    state.symptoms = [];
+    state.currentImage = null;
+
+    // CLEAR LOCAL STORAGE
+    localStorage.removeItem("medicsense_user_id");
+    localStorage.removeItem("medicsense_chat_history");
+    localStorage.removeItem("medicsense_appointments");
+    localStorage.removeItem("medicsense_symptoms");
+
+    await new Promise((r) => setTimeout(r, 500));
+
+    // Restore auth modal to original login state
+    restoreAuthModal();
+    closeAuthModal();
+    showToast("Successfully signed out", "success");
+  } catch (error) {
+    console.error("LOGOUT ERROR", error);
+    showToast("Error signing out: " + error.message, "error");
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML =
+        '<i class="fas fa-sign-out-alt"></i> <span>Sign Out</span>';
+      btn.style.opacity = "1";
+    }
+  }
+}
+
+function getReadableAuthError(error) {
+  const map = {
+    "auth/invalid-email": "Please enter a valid email address",
+    "auth/wrong-password":
+      "Unable to sign in. Please check your credentials and try again.",
+    "auth/weak-password": "Password must be at least 6 characters",
+    "auth/too-many-requests": "Too many attempts. Please try again later.",
+    "auth/network-request-failed":
+      "Connection issue. Please check your network and try again.",
+    "auth/user-disabled":
+      "This account is currently unavailable. Please contact support.",
+    "auth/operation-not-allowed": "This sign-in method is not available.",
+  };
+  return map[error.code] || "Unable to complete sign-in. Please try again.";
+}
+
+function setAuthLoading(isLoading) {
+  const btnGoogle = document.getElementById("btnGoogle");
+  const btnEmail = document.getElementById("btnEmailLogin");
+  const emailInput = document.getElementById("authEmail");
+  const passInput = document.getElementById("authPassword");
+
+  const toggle = (el, disabled, opacity) => {
+    if (el) {
+      el.disabled = disabled;
+      el.style.opacity = opacity;
+    }
+  };
+
+  if (isLoading) {
+    toggle(btnGoogle, true, "0.5");
+    if (btnEmail) {
+      btnEmail.disabled = true;
+      btnEmail.innerHTML =
+        '<i class="fas fa-spinner fa-spin"></i> Authenticating...';
+      btnEmail.style.opacity = "0.7";
+    }
+    toggle(emailInput, true, "1");
+    toggle(passInput, true, "1");
+  } else {
+    toggle(btnGoogle, false, "1");
+    if (btnEmail) {
+      btnEmail.disabled = false;
+      btnEmail.innerHTML = "Sign In / Sign Up";
+      btnEmail.style.opacity = "1";
+    }
+    toggle(emailInput, false, "1");
+    toggle(passInput, false, "1");
+  }
+}
+
+function showAuthError(message) {
+  const errorDiv = document.getElementById("authError");
+  if (errorDiv) {
+    errorDiv.style.display = "block";
+    errorDiv.textContent = message;
+  }
+  showToast(message, "error");
+}
 
 // Close auth modal on outside click
-document.addEventListener("click", function(event) {
+document.addEventListener("click", function (event) {
   const authModal = document.getElementById("authModal");
   if (authModal && event.target === authModal) {
     closeAuthModal();
   }
 });
+
+// ========================================
+// AUTOMATIC LOCATION DETECTION
+// ========================================
+function detectUserLocation() {
+  const locationElement = document.getElementById("user-location");
+
+  if (!locationElement) return;
+
+  // Try to get user's location using Geolocation API
+  if ("geolocation" in navigator) {
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+
+        try {
+          // Use reverse geocoding to get city/country
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`
+          );
+          const data = await response.json();
+
+          const city =
+            data.address.city ||
+            data.address.town ||
+            data.address.village ||
+            "";
+          const state = data.address.state || "";
+          const country = data.address.country || "";
+
+          let locationText = "";
+          if (city && country) {
+            locationText = `${city}, ${state ? state + ", " : ""}${country}`;
+          } else if (country) {
+            locationText = country;
+          } else {
+            locationText = "Location detected";
+          }
+
+          locationElement.textContent = locationText;
+          console.log("✅ Location detected:", locationText);
+        } catch (error) {
+          console.warn("⚠️ Could not fetch location details:", error);
+          locationElement.textContent = "Healthcare District, India";
+        }
+      },
+      (error) => {
+        console.warn("⚠️ Geolocation error:", error.message);
+        locationElement.textContent = "Healthcare District, India";
+      },
+      {
+        enableHighAccuracy: false,
+        timeout: 5000,
+        maximumAge: 0,
+      }
+    );
+  } else {
+    locationElement.textContent = "Healthcare District, India";
+  }
+}
+
+// Initialize location detection when page loads
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", detectUserLocation);
+} else {
+  detectUserLocation();
+}
+
+// ========================================
+// OPEN LIVE LOCATION ON GOOGLE MAPS
+// ========================================
+function openLiveLocation() {
+  if (navigator.geolocation) {
+    // Show loading message
+    const locationSpan = document.getElementById("user-location");
+    const originalText = locationSpan.textContent;
+    locationSpan.textContent = "Getting your location...";
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const latitude = position.coords.latitude;
+        const longitude = position.coords.longitude;
+
+        // Open Google Maps with the coordinates
+        const mapsUrl = `https://www.google.com/maps?q=${latitude},${longitude}`;
+        window.open(mapsUrl, "_blank");
+
+        // Restore original text
+        locationSpan.textContent = originalText;
+      },
+      (error) => {
+        console.error("Error getting location:", error);
+
+        // Fallback: Open Google Maps to Greater Noida, Uttar Pradesh, India
+        const fallbackUrl =
+          "https://www.google.com/maps/place/Greater+Noida,+Uttar+Pradesh,+India";
+        window.open(fallbackUrl, "_blank");
+
+        // Restore original text
+        locationSpan.textContent = originalText;
+
+        alert(
+          "Could not get your precise location. Opening our office location instead."
+        );
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 5000,
+        maximumAge: 0,
+      }
+    );
+  } else {
+    // Geolocation not supported - open default location
+    const fallbackUrl =
+      "https://www.google.com/maps/place/Greater+Noida,+Uttar+Pradesh,+India";
+    window.open(fallbackUrl, "_blank");
+    alert(
+      "Geolocation is not supported by your browser. Opening our office location."
+    );
+  }
+}
 
 // ========================================
 // EXPORT FOR DEBUGGING
@@ -1263,6 +2177,16 @@ if (typeof window !== "undefined") {
     },
   };
 }
+
+// Keyboard accessibility - Close modal on Escape key
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    const modal = document.getElementById("authModal");
+    if (modal && modal.style.display === "flex") {
+      closeAuthModal();
+    }
+  }
+});
 
 console.log(
   "✅ MedicSense AI Ultra - Ready to solve healthcare automation challenges!"

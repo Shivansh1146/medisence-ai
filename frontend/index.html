@@ -162,6 +162,54 @@
       <h2 class="loading-text">Initializing AI Healthcare System...</h2>
       <p class="loading-subtext">Powered by Google Gemini</p>
     </div>
+    <!-- Safety Timeout: Ensures user is never stuck -->
+    <script>
+      (function() {
+        var loader = document.getElementById('loadingScreen');
+        var tookLong = false;
+
+        console.log("🛡️ Loader safety watchdog active");
+
+        // 1. Show "Taking longer..." if stuck for 2s
+        var slowTimer = setTimeout(function() {
+          if(loader && loader.style.display !== 'none') {
+             var msg = document.querySelector('.loading-subtext');
+             if(msg) {
+               msg.textContent = "Taking longer than expected... Please wait.";
+               msg.style.color = '#fbbf24';
+             }
+             tookLong = true;
+             console.warn("⚠️ Loader still visible after 2s");
+          }
+        }, 2000);
+
+        // 2. Force Kill Loader after 6s (Absolute Max)
+        var killTimer = setTimeout(function() {
+          if(loader && loader.style.display !== 'none') {
+            console.error("🚨 LOADER TIMEOUT: Force-killing after 6s");
+            loader.style.display = 'none';
+
+            // Show error to user
+            var msg = document.querySelector('.loading-subtext');
+            if(msg) msg.textContent = "";
+
+            // Try to show toast if available
+            setTimeout(function() {
+              if (window.showToast) {
+                window.showToast("App loaded with limited functionality. Some services may be unavailable.", "warning");
+              }
+            }, 500);
+          }
+        }, 6000);
+
+        // Expose clear function for successful init
+        window.clearLoaderSafety = function() {
+          clearTimeout(slowTimer);
+          clearTimeout(killTimer);
+          console.log("✅ Loader safety watchdog cleared");
+        };
+      })();
+    </script>
   </div>
 
   <!-- Top Alert Bar (Dynamic) -->
@@ -220,8 +268,7 @@
             <i class="fas fa-heartbeat"></i>
           </div>
           <div class="logo-text">
-            <span class="logo-main">MedicSense</span>
-            <span class="logo-sub">AI Healthcare</span>
+            <span class="logo-main">MedicSense AI</span>
           </div>
         </div>
 
@@ -1137,7 +1184,7 @@
   </section>
 
   <!-- Footer -->
-  <footer class="footer">
+  <footer class="footer" id="fromFooter">
     <div class="container">
       <div class="footer-content">
         <div class="footer-column">
@@ -1150,82 +1197,53 @@
             appointment bottlenecks, and communication gaps with cutting-edge
             NLP and cloud automation.
           </p>
-          <div class="footer-social">
-            <a href="#"><i class="fab fa-facebook"></i></a>
-            <a href="#"><i class="fab fa-twitter"></i></a>
-            <a href="#"><i class="fab fa-linkedin"></i></a>
-            <a href="#"><i class="fab fa-instagram"></i></a>
-          </div>
-        </div>
-
-        <div class="footer-column">
-          <h4>Quick Links</h4>
-          <ul class="footer-links">
-            <li><a href="#symptom-checker">Symptom Checker</a></li>
-            <li><a href="#appointments">Book Appointment</a></li>
-            <li><a href="#ai-chat">AI Assistant</a></li>
-            <li><a href="#reports">Health Reports</a></li>
-          </ul>
         </div>
 
         <div class="footer-column">
           <h4>Resources</h4>
           <ul class="footer-links">
-            <li><a href="#">About Us</a></li>
-            <li><a href="#">How It Works</a></li>
-            <li><a href="#">Privacy Policy</a></li>
-            <li><a href="#">Terms of Service</a></li>
+            <li><a href="about.html#fromFooter">About Us</a></li>
+            <li><a href="how-it-works.html#fromFooter">How It Works</a></li>
+            <li><a href="privacy.html#fromFooter">Privacy Policy</a></li>
+            <li><a href="terms.html#fromFooter">Terms of Service</a></li>
           </ul>
         </div>
 
         <div class="footer-column">
           <h4>Contact</h4>
           <ul class="footer-contact">
-            <li><i class="fas fa-phone"></i> 1800-MEDIC-AI</li>
-            <li><i class="fas fa-envelope"></i> support@medicsense.ai</li>
             <li>
-              <i class="fas fa-map-marker-alt"></i> Healthcare District, India
+              <a href="tel:+918006334224" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 0.5rem;" title="Click to call">
+                <i class="fas fa-phone"></i> +91-1800-633-4224
+              </a>
+            </li>
+            <li>
+              <a href="https://mail.google.com/mail/?view=cm&fs=1&to=support@medicsense.ai" target="_blank" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 0.5rem;" title="Click to send email via Gmail">
+                <i class="fas fa-envelope"></i> support@medicsense.ai
+              </a>
+            </li>
+            <li>
+              <a href="#" onclick="openLiveLocation(); return false;" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 0.5rem; cursor: pointer;" title="Click to view on Google Maps">
+                <i class="fas fa-map-marker-alt"></i> <span id="user-location">Detecting location...</span>
+              </a>
             </li>
           </ul>
         </div>
       </div>
 
       <div class="footer-bottom">
-        <p>&copy; 2025 MedicSense AI. All rights reserved.</p>
-        <p class="powered-by">
-          <i class="fas fa-bolt"></i> Powered by Google Gemini AI
-        </p>
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;">
+          <p style="margin: 0;">&copy; 2026 MedicSense AI. All rights reserved.</p>
+          <p class="powered-by" style="margin: 0;">
+            <i class="fas fa-bolt"></i> Powered by Google Gemini AI
+          </p>
+          <p style="margin: 0; font-size: 0.85rem; color: #94a3b8;">
+            <i class="fas fa-info-circle"></i> <strong>Disclaimer:</strong> This application is for demonstration and educational purposes only. Not intended as a substitute for professional medical advice, diagnosis, or treatment.
+          </p>
+        </div>
       </div>
     </div>
   </footer>
-
-  <!-- Auth Modal -->
-  <div class="modal-overlay" id="authModal">
-    <div class="modal-content auth-modal">
-      <button class="modal-close" onclick="closeAuthModal()"><i class="fas fa-times"></i></button>
-      <div class="auth-header">
-        <h2>Welcome to MedicSense</h2>
-        <p>Sign in to access your health dashboard</p>
-      </div>
-      <div class="auth-options">
-        <button class="auth-btn-google" onclick="handleGoogleLogin()">
-          <i class="fab fa-google"></i> Continue with Google
-        </button>
-        <div class="auth-divider"><span>OR</span></div>
-        <form id="emailAuthForm" onsubmit="handleEmailLogin(event)">
-          <div class="form-group">
-            <input type="email" placeholder="Email Address" class="form-control" required
-              style="width: 100%; margin-bottom: 10px; padding: 10px;">
-          </div>
-          <div class="form-group">
-            <input type="password" placeholder="Password" class="form-control" required
-              style="width: 100%; margin-bottom: 10px; padding: 10px;">
-          </div>
-          <button type="submit" class="btn btn-primary" style="width: 100%">Sign In</button>
-        </form>
-      </div>
-    </div>
-  </div>
 
   <!-- Emergency Modal -->
   <div class="modal" id="emergencyModal">
@@ -1266,31 +1284,20 @@
   <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <!-- Environment Variables - Load before other scripts -->
-  <!-- Env Config (generated from .env by load-env.js) - Must load first -->
-  <script src="env-config.js"></script>
-
-  <!-- Auth Scripts -->
-  <script type="module" src="firebase_config.js"></script>
-  <script type="module" src="auth_logic.js"></script>
-  <!-- WhatsApp Service -->
-  <script type="module" src="whatsapp_service.js"></script>
-
-  <script src="script_ultra.js"></script>
+  <script src="env-loader.js"></script>
+  <script src="load-env.js"></script>
+  <script type="module" src="firebase.js"></script>
+  <script src="script_ultra.js" defer></script>
 
   <script>
-    // Initialize AOS (Animate on Scroll)
-    AOS.init({
-      duration: 800,
-      once: true,
-      offset: 100,
-    });
-
-    // Hide loading screen
-    window.addEventListener("load", function () {
-      setTimeout(() => {
-        document.getElementById("loadingScreen").style.display = "none";
-      }, 1000);
-    });
+    // Initialize AOS (Animate on Scroll) - Non-blocking
+    if (typeof AOS !== 'undefined') {
+      AOS.init({
+        duration: 800,
+        once: true,
+        offset: 100,
+      });
+    }
 
     // Set minimum date for appointment booking (today)
     document.addEventListener("DOMContentLoaded", function () {
@@ -1304,55 +1311,57 @@
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/sw.js')
           .then((registration) => {
-            console.log('Service Worker registered:', registration);
+            console.log('✅ Service Worker registered:', registration);
           })
           .catch((error) => {
-            console.log('Service Worker registration failed:', error);
+            console.warn('⚠️ Service Worker registration failed:', error);
           });
       }
-
-      // Check login status
-      checkLoginStatus();
     });
-
-    // Check if user is logged in
-    async function checkLoginStatus() {
-      const token = localStorage.getItem('auth_token');
-      const sessionId = localStorage.getItem('session_id');
-
-      if (token || sessionId) {
-        try {
-          const apiUrl = window.ENV?.API_BASE_URL || 'http://localhost:5000/api';
-          const response = await fetch(`${apiUrl}/auth/verify`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ token, sessionId })
-          });
-
-          const data = await response.json();
-          if (data.success && data.user) {
-            updateAuthUI(data.user);
-          } else {
-            // Invalid session, clear storage
-            localStorage.removeItem('auth_token');
-            localStorage.removeItem('session_id');
-            localStorage.removeItem('user_data');
-          }
-        } catch (error) {
-          console.error('Error checking login status:', error);
-        }
-      }
-    }
-
-    // Update UI based on auth status
-    function updateAuthUI(user) {
-      const authBtn = document.getElementById('authBtn');
-      if (authBtn && user) {
-        authBtn.innerHTML = '<i class="fas fa-user-check"></i>';
-        authBtn.title = `Logged in as ${user.name || user.email || user.phone}`;
-      }
-    }
   </script>
+  <!-- Auth Modal -->
+  <div class="modal-overlay" id="authModal">
+    <div class="auth-modal">
+      <button class="modal-close" onclick="closeAuthModal()">
+        <i class="fas fa-times"></i>
+      </button>
+      <div class="auth-header">
+        <h2>Welcome Back</h2>
+        <p>Sign in to access your detailed health records</p>
+      </div>
+
+      <div class="auth-options">
+        <button class="auth-btn-google" onclick="handleGoogleLogin()" id="btnGoogle">
+          <img src="https://www.google.com/favicon.ico" alt="Google" width="20">
+          <span>Continue with Google</span>
+        </button>
+      </div>
+
+      <div class="auth-divider">
+        <span>OR</span>
+      </div>
+
+      <div class="auth-form">
+        <div id="authError" style="display:none; color: #dc2626; background: #fee2e2; padding: 10px; border-radius: 8px; margin-bottom: 15px; font-size: 0.9rem; text-align: center;"></div>
+
+        <div class="form-group" style="margin-bottom: 15px;">
+            <input type="email" id="authEmail" placeholder="Email Address" class="form-control" style="width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #e2e8f0;">
+        </div>
+        <div class="form-group" style="margin-bottom: 20px;">
+            <input type="password" id="authPassword" placeholder="Password" class="form-control" style="width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #e2e8f0;">
+        </div>
+
+        <button class="btn btn-primary" onclick="handleEmailLogin()" id="btnEmailLogin" style="width: 100%; padding: 12px; border-radius: 10px;">
+            Sign In / Sign Up
+        </button>
+      </div>
+
+      <p style="text-align: center; color: #64748b; font-size: 0.8rem; margin-top: 20px;">
+        By continuing, you agree to our Terms of Service and Privacy Policy.
+      </p>
+    </div>
+  </div>
+
 </body>
 
 </html>

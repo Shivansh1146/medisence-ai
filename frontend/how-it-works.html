@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>How It Works - MedicSense AI</title>
+    <link rel="stylesheet" href="style_ultra.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <style>
+      body {
+        font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
+          sans-serif;
+        line-height: 1.6;
+        color: #1e293b;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+      }
+
+      .legal-container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 40px 20px;
+      }
+
+      .legal-header {
+        text-align: center;
+        margin-bottom: 50px;
+        padding-top: 40px;
+      }
+
+      .legal-header h1 {
+        font-size: 3rem;
+        font-weight: 700;
+        color: #ffffff;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 15px;
+        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+      }
+
+      .legal-header p {
+        font-size: 1.2rem;
+        color: rgba(255, 255, 255, 0.9);
+        max-width: 700px;
+        margin: 0 auto;
+      }
+
+      .legal-content {
+        background: white;
+        border-radius: 20px;
+        padding: 40px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+      }
+
+      .legal-section {
+        margin-bottom: 40px;
+      }
+
+      .legal-section h2 {
+        font-size: 1.8rem;
+        color: #667eea;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .legal-section h3 {
+        font-size: 1.3rem;
+        color: #764ba2;
+        margin-top: 25px;
+        margin-bottom: 15px;
+      }
+
+      .legal-section p {
+        color: #4b5563;
+        margin-bottom: 15px;
+        font-size: 1.05rem;
+      }
+
+      .legal-section ul,
+      .legal-section ol {
+        margin-left: 20px;
+        margin-bottom: 15px;
+      }
+
+      .legal-section li {
+        color: #4b5563;
+        margin-bottom: 12px;
+        font-size: 1.05rem;
+      }
+
+      .highlight-box {
+        background: #fef2f2;
+        border-left: 4px solid #ef4444;
+        padding: 20px;
+        margin: 25px 0;
+        border-radius: 8px;
+      }
+
+      .step-box {
+        background: #f0fdf4;
+        border-left: 4px solid #22c55e;
+        padding: 20px;
+        margin: 20px 0;
+        border-radius: 8px;
+      }
+
+      .step-box h4 {
+        color: #16a34a;
+        margin-bottom: 10px;
+        font-size: 1.2rem;
+      }
+
+      .back-button {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        background: white;
+        color: #667eea;
+        padding: 12px 24px;
+        border-radius: 10px;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        margin-bottom: 30px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+
+      .back-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        background: #667eea;
+        color: white;
+      }
+
+      .feature-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin: 30px 0;
+      }
+
+      .feature-card {
+        background: linear-gradient(135deg, #f0f9ff 0%, #e0e7ff 100%);
+        padding: 20px;
+        border-radius: 12px;
+        border: 1px solid #c7d2fe;
+      }
+
+      .feature-card i {
+        font-size: 2rem;
+        color: #667eea;
+        margin-bottom: 15px;
+      }
+
+      .feature-card h4 {
+        color: #667eea;
+        margin-bottom: 10px;
+      }
+
+      .feature-card p {
+        font-size: 0.95rem;
+        color: #6b7280;
+      }
+
+      @media (max-width: 768px) {
+        .legal-header h1 {
+          font-size: 2rem;
+        }
+
+        .legal-content {
+          padding: 25px;
+        }
+
+        .legal-section h2 {
+          font-size: 1.5rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="legal-container">
+      <a href="index.html" class="back-button">
+        <i class="fas fa-arrow-left"></i>
+        Back to Home
+      </a>
+
+      <div class="legal-header">
+        <h1>
+          <i class="fas fa-cogs"></i>
+          How It Works
+        </h1>
+        <p>
+          Understanding the technology behind MedicSense AI's intelligent
+          healthcare assistance
+        </p>
+      </div>
+
+      <div class="legal-content">
+        <!-- Overview -->
+        <div class="legal-section">
+          <h2><i class="fas fa-lightbulb"></i> Overview</h2>
+          <p>
+            MedicSense AI is an advanced healthcare assistant powered by Google
+            Gemini AI that combines natural language processing, computer
+            vision, and medical knowledge to provide intelligent healthcare
+            support. Our system is designed to make healthcare more accessible,
+            efficient, and user-friendly.
+          </p>
+          <div class="highlight-box">
+            <p>
+              <strong>Mission:</strong> To bridge the gap between patients and
+              healthcare services using cutting-edge AI technology, reducing
+              diagnosis delays, appointment bottlenecks, and communication
+              barriers.
+            </p>
+          </div>
+        </div>
+
+        <!-- Core Features -->
+        <div class="legal-section">
+          <h2><i class="fas fa-star"></i> Core Features</h2>
+
+          <div class="feature-grid">
+            <div class="feature-card">
+              <i class="fas fa-stethoscope"></i>
+              <h4>Symptom Analysis</h4>
+              <p>
+                AI-powered symptom checker that analyzes your health concerns
+                and provides preliminary insights
+              </p>
+            </div>
+
+            <div class="feature-card">
+              <i class="fas fa-calendar-check"></i>
+              <h4>Smart Appointments</h4>
+              <p>
+                Automated appointment booking system with real-time availability
+                checking
+              </p>
+            </div>
+
+            <div class="feature-card">
+              <i class="fas fa-camera"></i>
+              <h4>Image Analysis</h4>
+              <p>
+                Computer vision technology to analyze medical images and
+                identify potential concerns
+              </p>
+            </div>
+
+            <div class="feature-card">
+              <i class="fas fa-comments"></i>
+              <h4>AI Chat Assistant</h4>
+              <p>
+                24/7 intelligent chatbot for health queries and medical
+                information
+              </p>
+            </div>
+
+            <div class="feature-card">
+              <i class="fas fa-exclamation-triangle"></i>
+              <h4>Emergency Detection</h4>
+              <p>
+                Automatic detection of emergency situations with priority
+                routing
+              </p>
+            </div>
+
+            <div class="feature-card">
+              <i class="fas fa-user-md"></i>
+              <h4>Doctor Matching</h4>
+              <p>
+                Smart algorithm to connect you with the most suitable healthcare
+                provider
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- How to Use -->
+        <div class="legal-section">
+          <h2><i class="fas fa-play-circle"></i> How to Use MedicSense AI</h2>
+
+          <div class="step-box">
+            <h4>Step 1: Sign In</h4>
+            <p>
+              Create an account or sign in using Google authentication for
+              secure access to personalized healthcare features.
+            </p>
+          </div>
+
+          <div class="step-box">
+            <h4>Step 2: Describe Your Symptoms</h4>
+            <p>
+              Use the Symptom Checker to describe what you're experiencing. Our
+              AI analyzes your symptoms and provides:
+            </p>
+            <ul>
+              <li>Severity assessment (Low, Medium, High, Critical)</li>
+              <li>Possible conditions based on medical knowledge</li>
+              <li>Recommended next steps</li>
+              <li>When to seek immediate care</li>
+            </ul>
+          </div>
+
+          <div class="step-box">
+            <h4>Step 3: Upload Medical Images (Optional)</h4>
+            <p>
+              For visual symptoms like rashes, injuries, or skin conditions:
+            </p>
+            <ul>
+              <li>Click on "Camera Scanner" feature</li>
+              <li>Upload or capture an image</li>
+              <li>AI analyzes the image using computer vision</li>
+              <li>Receive preliminary assessment and recommendations</li>
+            </ul>
+          </div>
+
+          <div class="step-box">
+            <h4>Step 4: Chat with AI Assistant</h4>
+            <p>Have questions? Our AI assistant is available 24/7 to:</p>
+            <ul>
+              <li>Answer health-related questions</li>
+              <li>Provide medication information</li>
+              <li>Explain medical terms</li>
+              <li>Offer general health advice</li>
+            </ul>
+          </div>
+
+          <div class="step-box">
+            <h4>Step 5: Book an Appointment</h4>
+            <p>When professional care is needed:</p>
+            <ul>
+              <li>
+                System recommends suitable doctors based on your condition
+              </li>
+              <li>View available time slots in real-time</li>
+              <li>Book appointment with one click</li>
+              <li>Receive confirmation and reminders</li>
+            </ul>
+          </div>
+
+          <div class="step-box">
+            <h4>Step 6: Emergency Assistance</h4>
+            <p>In critical situations:</p>
+            <ul>
+              <li>System automatically detects emergency keywords</li>
+              <li>Priority routing to emergency services</li>
+              <li>Immediate access to emergency contacts</li>
+              <li>Location sharing for faster response</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Technology Stack -->
+        <div class="legal-section">
+          <h2>
+            <i class="fas fa-microchip"></i> Technology Behind MedicSense AI
+          </h2>
+
+          <h3>1. Google Gemini AI (Gemini 1.5 Pro)</h3>
+          <p>
+            Our core AI engine uses Google's most advanced language model for:
+          </p>
+          <ul>
+            <li>
+              <strong>Natural Language Understanding:</strong> Comprehends
+              complex medical terminology and conversational language
+            </li>
+            <li>
+              <strong>Medical Knowledge Base:</strong> Trained on vast medical
+              literature and guidelines
+            </li>
+            <li>
+              <strong>Context Awareness:</strong> Maintains conversation history
+              for personalized responses
+            </li>
+            <li>
+              <strong>Multimodal Analysis:</strong> Processes both text and
+              images for comprehensive assessment
+            </li>
+          </ul>
+
+          <h3>2. Computer Vision</h3>
+          <p>Advanced image analysis capabilities:</p>
+          <ul>
+            <li>Injury and wound assessment</li>
+            <li>Skin condition identification</li>
+            <li>Rash and inflammation detection</li>
+            <li>Visual symptom documentation</li>
+          </ul>
+
+          <h3>3. Smart Severity Classifier</h3>
+          <p>
+            Our proprietary algorithm classifies symptoms into severity levels:
+          </p>
+          <ul>
+            <li>
+              <strong>Critical:</strong> Requires immediate emergency care
+            </li>
+            <li><strong>High:</strong> Needs urgent medical attention</li>
+            <li><strong>Medium:</strong> Should see a doctor soon</li>
+            <li><strong>Low:</strong> Can monitor at home with self-care</li>
+          </ul>
+
+          <h3>4. Real-Time Appointment System</h3>
+          <p>Intelligent scheduling that:</p>
+          <ul>
+            <li>Checks doctor availability in real-time</li>
+            <li>Prevents double-booking</li>
+            <li>Matches patients with appropriate specialists</li>
+            <li>Sends automated reminders</li>
+          </ul>
+
+          <h3>5. Security & Privacy</h3>
+          <p>Enterprise-grade security measures:</p>
+          <ul>
+            <li>Firebase Authentication for secure login</li>
+            <li>End-to-end encryption for sensitive data</li>
+            <li>HIPAA-compliant data handling</li>
+            <li>No data sharing with third parties</li>
+          </ul>
+        </div>
+
+        <!-- AI Limitations -->
+        <div class="legal-section">
+          <h2>
+            <i class="fas fa-info-circle"></i> Understanding AI Limitations
+          </h2>
+          <div class="highlight-box">
+            <p>
+              <strong>Important:</strong> While MedicSense AI uses advanced
+              technology, it has important limitations:
+            </p>
+            <ul>
+              <li>
+                <strong>Not a Replacement:</strong> AI cannot replace
+                professional medical diagnosis
+              </li>
+              <li>
+                <strong>Educational Purpose:</strong> Designed for preliminary
+                assessment and education
+              </li>
+              <li>
+                <strong>No Prescriptions:</strong> Cannot prescribe medications
+                or treatments
+              </li>
+              <li>
+                <strong>Emergency Situations:</strong> Always call emergency
+                services (911/112) for life-threatening situations
+              </li>
+              <li>
+                <strong>Accuracy:</strong> AI suggestions should be verified by
+                healthcare professionals
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Data Processing -->
+        <div class="legal-section">
+          <h2><i class="fas fa-database"></i> How We Process Your Data</h2>
+
+          <h3>Data Collection</h3>
+          <p>We collect only essential information:</p>
+          <ul>
+            <li>Symptom descriptions and health concerns</li>
+            <li>Medical images (if uploaded)</li>
+            <li>Chat history for context</li>
+            <li>Appointment preferences</li>
+            <li>Account information (email, name)</li>
+          </ul>
+
+          <h3>Data Usage</h3>
+          <p>Your data is used to:</p>
+          <ul>
+            <li>Provide personalized health assessments</li>
+            <li>Improve AI accuracy and responses</li>
+            <li>Maintain your health history</li>
+            <li>Connect you with appropriate healthcare providers</li>
+          </ul>
+
+          <h3>Data Protection</h3>
+          <p>We protect your information through:</p>
+          <ul>
+            <li>Encrypted storage and transmission</li>
+            <li>Access controls and authentication</li>
+            <li>Regular security audits</li>
+            <li>Compliance with healthcare privacy regulations</li>
+          </ul>
+        </div>
+
+        <!-- Best Practices -->
+        <div class="legal-section">
+          <h2><i class="fas fa-check-circle"></i> Best Practices for Users</h2>
+
+          <h3>For Accurate Results:</h3>
+          <ul>
+            <li>Provide detailed and honest symptom descriptions</li>
+            <li>Include duration, intensity, and frequency of symptoms</li>
+            <li>Mention any existing medical conditions</li>
+            <li>Upload clear, well-lit images for visual analysis</li>
+            <li>Follow up with healthcare professionals</li>
+          </ul>
+
+          <h3>When to Seek Immediate Care:</h3>
+          <div class="highlight-box">
+            <p>
+              <strong
+                >Call emergency services immediately if you experience:</strong
+              >
+            </p>
+            <ul>
+              <li>Chest pain or pressure</li>
+              <li>Difficulty breathing</li>
+              <li>Severe bleeding</li>
+              <li>Sudden severe headache</li>
+              <li>Loss of consciousness</li>
+              <li>
+                Signs of stroke (facial drooping, arm weakness, speech
+                difficulty)
+              </li>
+              <li>Suicidal thoughts</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Support -->
+        <div class="legal-section">
+          <h2><i class="fas fa-question-circle"></i> Need Help?</h2>
+          <p>
+            If you have questions about how MedicSense AI works or need
+            technical support:
+          </p>
+          <ul>
+            <li><strong>Email:</strong> support@medicsense.ai</li>
+            <li><strong>Phone:</strong> +91-1800-633-4224</li>
+            <li><strong>Documentation:</strong> Visit our support center</li>
+          </ul>
+        </div>
+
+        <!-- Last Updated -->
+        <div
+          class="legal-section"
+          style="
+            text-align: center;
+            margin-top: 50px;
+            padding-top: 30px;
+            border-top: 1px solid rgba(96, 165, 250, 0.2);
+          "
+        >
+          <p style="color: #64748b">
+            <i class="fas fa-calendar"></i> Last Updated: January 16, 2026
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Smart back navigation - returns to the section where user clicked the link
+      document.addEventListener("DOMContentLoaded", function () {
+        const backButton = document.querySelector(".back-button");
+        if (backButton && window.location.hash) {
+          // Update back button to include the hash for smooth scrolling
+          const currentUrl = backButton.getAttribute("href");
+          backButton.setAttribute("href", currentUrl + window.location.hash);
+        }
+      });
+    </script>
+  </body>
+</html>

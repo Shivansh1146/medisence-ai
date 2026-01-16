@@ -7,16 +7,18 @@ import datetime
 import json
 import os
 
+from auth_manager import auth_manager
 from camera_analyzer import camera_analyzer
+from database import db
 from emergency_detector import EmergencyDetector
+from emergency_service import emergency_service
 from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 from gemini_service import gemini_service
 from otp_service import otp_service
 from severity_classifier import SeverityClassifier
 from symptom_analyzer import SymptomAnalyzer
-from database import db
-from auth_manager import auth_manager
+from unified_auth import register_unified_auth_route
 
 app = Flask(__name__)
 CORS(app)  # Allow frontend to communicate
@@ -723,6 +725,90 @@ def record_symptoms():
 APPOINTMENTS_FILE = "appointments.json"
 
 
+@app.route("/api/appointments/slots", methods=["GET"])
+def get_appointment_slots():
+    """Get available appointment slots for a doctor on a specific date"""
+    try:
+        doctor_id = request.args.get("doctor")
+        date = request.args.get("date")
+
+        if not doctor_id or not date:
+            return (
+                jsonify(
+                    {"success": False, "message": "Doctor and date parameters required"}
+                ),
+                400,
+            )
+
+        # Define all possible time slots (business hours)
+        all_slots = [
+            "09:00",
+            "09:30",
+            "10:00",
+            "10:30",
+            "11:00",
+            "11:30",
+            "14:00",
+            "14:30",
+            "15:00",
+            "15:30",
+            "16:00",
+            "16:30",
+        ]
+
+        # Load existing appointments to find booked slots
+        booked_slots = []
+        if os.path.exists(APPOINTMENTS_FILE):
+            try:
+                with open(APPOINTMENTS_FILE, "r") as f:
+                    appointments = json.load(f)
+                    # Find all booked slots for this doctor on this date
+                    booked_slots = [
+                        apt.get("time")
+                        for apt in appointments
+                        if apt.get("doctorId") == doctor_id and apt.get("date") == date
+                    ]
+            except Exception as e:
+                print(f"[WARNING] Error reading appointments: {e}")
+                # Continue with empty booked_slots
+
+        # Filter out booked slots to get available ones
+        available_slots = [slot for slot in all_slots if slot not in booked_slots]
+
+        return jsonify(
+            {
+                "success": True,
+                "slots": available_slots,
+                "total_available": len(available_slots),
+                "total_booked": len(booked_slots),
+            }
+        )
+
+    except Exception as e:
+        print(f"❌ Error fetching appointment slots: {e}")
+        # FALLBACK: Return all slots if error occurs
+        return jsonify(
+            {
+                "success": True,
+                "slots": [
+                    "09:00",
+                    "09:30",
+                    "10:00",
+                    "10:30",
+                    "11:00",
+                    "11:30",
+                    "14:00",
+                    "14:30",
+                    "15:00",
+                    "15:30",
+                    "16:00",
+                    "16:30",
+                ],
+                "message": "Showing default availability (real-time data unavailable)",
+            }
+        )
+
+
 @app.route("/api/appointments/book", methods=["POST"])
 def book_appointment():
     """Book an appointment and save to database"""
@@ -1293,6 +1379,177 @@ def send_whatsapp():
         )
 
 
+# ============================================
+# EMERGENCY ENDPOINTS - BACKEND ENFORCEMENT
+# ============================================
+
+
+@app.route("/api/emergency/escalate", methods=["POST"])
+def emergency_escalate():
+    """
+    Log emergency escalation when user clicks Call 112
+    This is the highest priority action - stop AI processing
+    """
+    try:
+        data = request.json
+        user_id = data.get("user_id", "anonymous")
+        session_id = data.get("session_id", "")
+        location = data.get("location", {})
+
+        result = emergency_service.log_emergency_escalation(
+            user_id=user_id,
+            session_id=session_id,
+            escalation_type="call_112",
+            location=location,
+        )
+
+        return jsonify(result), 200
+
+    except Exception as e:
+        print(f"❌ Emergency escalation error: {e}")
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "error": "Emergency logging failed",
+                    "message": "Call 112 immediately regardless of system status",
+                }
+            ),
+            500,
+        )
+
+
+@app.route("/api/emergency/chat", methods=["POST"])
+def emergency_chat():
+    """
+    Handle emergency chat with STRICT AI restrictions
+    This endpoint enforces Emergency Context Mode
+    """
+    try:
+        data = request.json
+        session_id = data.get("session_id", "")
+        user_message = data.get("message", "")
+
+        # Activate strict emergency context
+        emergency_context = emergency_service.activate_emergency_context(
+            session_id=session_id, user_message=user_message
+        )
+
+        # Get strict emergency prompt to override normal AI
+        strict_prompt = emergency_context["strict_prompt"]
+
+        # Generate AI response with emergency restrictions
+        # This MUST NOT diagnose, treat, or reassure
+        emergency_response = gemini_service.chat_medical(
+            user_message=user_message,
+            symptoms=[],
+            severity=4,
+            system_override=strict_prompt,  # Force emergency mode
+        )
+
+        # Ensure response prioritizes 112
+        if "🚨 CALL 112 IMMEDIATELY" not in emergency_response:
+            emergency_response = (
+                "🚨 CALL 112 IMMEDIATELY\n\n"
+                "This is a potential emergency situation. "
+                "Professional emergency services are the ONLY appropriate response.\n\n"
+                + emergency_response
+            )
+
+        return (
+            jsonify(
+                {
+                    "success": True,
+                    "response": emergency_response,
+                    "emergency_mode": True,
+                    "restrictions": emergency_context["context"]["restrictions"],
+                    "session_id": session_id,
+                }
+            ),
+            200,
+        )
+
+    except Exception as e:
+        print(f"❌ Emergency chat error: {e}")
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "response": (
+                        "🚨 CALL 112 IMMEDIATELY\n\n"
+                        "System error occurred. Emergency services must be contacted directly. "
+                        "Do NOT rely on AI in emergency situations."
+                    ),
+                    "emergency_mode": True,
+                }
+            ),
+            500,
+        )
+
+
+@app.route("/api/emergency/hospitals", methods=["POST"])
+def emergency_hospitals():
+    """
+    Attempt real hospital lookup, safe fallback if unavailable
+    NEVER fake hospital data
+    """
+    try:
+        data = request.json
+        latitude = data.get("latitude")
+        longitude = data.get("longitude")
+
+        if not latitude or not longitude:
+            return (
+                jsonify(
+                    {
+                        "status": "error",
+                        "message": "Location required for hospital search",
+                        "action": "call_112",
+                        "instructions": [
+                            "Call 112 immediately for ambulance",
+                            "They will direct you to nearest emergency room",
+                        ],
+                    }
+                ),
+                400,
+            )
+
+        # Attempt real hospital lookup (safe fallback implemented)
+        hospital_data = emergency_service.get_emergency_hospitals(
+            latitude=float(latitude), longitude=float(longitude)
+        )
+
+        return jsonify(hospital_data), 200
+
+    except Exception as e:
+        print(f"❌ Hospital lookup error: {e}")
+        return (
+            jsonify(
+                {
+                    "status": "fallback",
+                    "message": "Hospital lookup unavailable. Use emergency services.",
+                    "action": "call_112",
+                    "emergency_numbers": {
+                        "primary": "112",
+                        "alternatives": ["108", "102"],
+                    },
+                    "instructions": [
+                        "Call 112 immediately for ambulance",
+                        "Emergency services will direct you to nearest hospital",
+                        "Do NOT delay seeking professional help",
+                    ],
+                }
+            ),
+            200,
+        )
+
+
+# ============================================
+# REGISTER UNIFIED AUTHENTICATION ROUTE
+# ============================================
+register_unified_auth_route(app, db, otp_service)
+
+
 if __name__ == "__main__":
     print("🚀 MedicSense AI Backend Starting...")
     print("📡 Server running at http://localhost:5000")
@@ -1303,6 +1560,7 @@ if __name__ == "__main__":
     print("📄 Reports endpoint enabled")
     print("🔍 Search endpoint enabled")
     print("📱 OTP authentication enabled")
+    print("🔐 Unified email auth enabled (automatic sign-in/sign-up)")
     print(
         "\n💡 Tip: Get a free Gemini API key from https://makersuite.google.com/app/apikey"
     )

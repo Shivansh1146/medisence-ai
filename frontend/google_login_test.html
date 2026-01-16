@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Login Test</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 { color: #333; margin-bottom: 10px; font-size: 28px; }
+        .subtitle { color: #666; margin-bottom: 30px; font-size: 14px; }
+        #loginBtn {
+            width: 100%;
+            padding: 16px;
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            transition: all 0.3s;
+        }
+        #loginBtn:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+        .status {
+            margin-top: 20px;
+            padding: 16px;
+            border-radius: 12px;
+            display: none;
+        }
+        .status.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            display: block;
+        }
+        .status.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            display: block;
+        }
+        .user-info {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            display: none;
+        }
+        .user-info.show { display: block; }
+        .user-info img {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔥 Google Login Test</h1>
+        <p class="subtitle">Testing Firebase Authentication</p>
+
+        <button id="loginBtn">
+            <img src="https://www.google.com/favicon.ico" width="24" height="24" alt="Google">
+            Sign in with Google
+        </button>
+
+        <div id="status" class="status"></div>
+
+        <div id="userInfo" class="user-info">
+            <img id="userPhoto" src="" alt="User">
+            <h3 id="userName"></h3>
+            <p id="userEmail"></p>
+        </div>
+    </div>
+
+    <script type="module">
+        import { signInWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { auth } from "./firebase.js";
+
+        const provider = new GoogleAuthProvider();
+        const loginBtn = document.getElementById("loginBtn");
+        const status = document.getElementById("status");
+        const userInfo = document.getElementById("userInfo");
+
+        loginBtn.onclick = async () => {
+            try {
+                loginBtn.disabled = true;
+                loginBtn.textContent = "Signing in...";
+
+                const result = await signInWithPopup(auth, provider);
+                const user = result.user;
+
+                console.log("SUCCESS", user);
+
+                status.className = "status success";
+                status.textContent = "✅ Login successful!";
+
+                document.getElementById("userPhoto").src = user.photoURL || "https://www.google.com/favicon.ico";
+                document.getElementById("userName").textContent = user.displayName || "User";
+                document.getElementById("userEmail").textContent = user.email || "";
+                userInfo.classList.add("show");
+
+                loginBtn.textContent = "Signed In ✓";
+
+            } catch (err) {
+                console.error("LOGIN ERROR:", err);
+
+                status.className = "status error";
+                status.innerHTML = `<strong>❌ Login failed</strong><br>${err.code}<br>${err.message}`;
+
+                loginBtn.disabled = false;
+                loginBtn.innerHTML = `<img src="https://www.google.com/favicon.ico" width="24" height="24" alt="Google"> Sign in with Google`;
+            }
+        };
+    </script>
+</body>
+</html>

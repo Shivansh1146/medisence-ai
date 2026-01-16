@@ -53,24 +53,47 @@ class GeminiService:
                 # Use same model for vision - gemini-1.5-pro supports both text and vision
                 self.vision_model = genai.GenerativeModel("gemini-1.5-pro")
                 self.is_configured = True
-                print("✅ Gemini 1.5 Pro API configured successfully")
-                print("🏥 Medical AI ready with 95%+ accuracy")
+                print("[OK] Gemini 1.5 Pro API configured successfully")
+                print("[MEDICAL] Medical AI ready with 95%+ accuracy")
             except Exception as e:
-                print(f"⚠️  Gemini API configuration failed: {e}")
-                print("📝 Running in fallback mode (rule-based responses)")
+                print(f"[WARNING] Gemini API configuration failed: {e}")
+                print("[INFO] Running in fallback mode (rule-based responses)")
         else:
-            print("📝 No Gemini API key found - using fallback mode")
+            print("[INFO] No Gemini API key found - using fallback mode")
             print(
-                "💡 Get a free API key from: https://makersuite.google.com/app/apikey"
+                "[TIP] Get a free API key from: https://makersuite.google.com/app/apikey"
             )
 
-    def chat_medical(self, user_message, symptoms, severity):
-        """Generate AI-powered medical response with disease recognition"""
+    def chat_medical(self, user_message, symptoms, severity, system_override=None):
+        """Generate AI-powered medical response with disease recognition
+
+        Args:
+            user_message: User's input message
+            symptoms: List of detected symptoms
+            severity: Severity level (1-4)
+            system_override: Optional system prompt to override normal behavior (for emergency mode)
+        """
         if not self.is_configured:
             return self._fallback_response(symptoms, severity)
 
         try:
-            prompt = f"""You are MedicSense AI, a compassionate and knowledgeable medical assistant with expertise in disease recognition and symptom analysis.
+            # Check if emergency mode override is provided
+            if system_override:
+                # EMERGENCY MODE: Use strict emergency prompt
+                prompt = f"""{system_override}
+
+User's emergency message: "{user_message}"
+
+Respond according to EMERGENCY CONTEXT MODE rules above. You MUST:
+1. Start with "🚨 CALL 112 IMMEDIATELY"
+2. Explain why in ONE sentence
+3. Give 3-4 immediate safety actions ONLY (while waiting for help)
+4. End with "Emergency services are the ONLY proper response. I cannot replace them."
+
+Do NOT diagnose. Do NOT treat. Do NOT reassure. ONLY safety guidance."""
+            else:
+                # NORMAL MODE: Standard medical chat
+                prompt = f"""You are MedicSense AI, a compassionate and knowledgeable medical assistant with expertise in disease recognition and symptom analysis.
 
 User's message: "{user_message}"
 Detected symptoms: {', '.join(symptoms) if symptoms else 'None specific'}
@@ -94,10 +117,17 @@ IMPORTANT: Always state this is NOT a diagnosis and encourage professional medic
 """
 
             response = self.model.generate_content(prompt)
-            return response.text
+
+            # Validate response exists and has text
+            if response and hasattr(response, "text") and response.text:
+                return response.text
+            else:
+                print("[WARNING] Gemini returned empty response - using fallback")
+                return self._fallback_response(symptoms, severity)
 
         except Exception as e:
-            print(f"❌ Gemini API error: {e}")
+            print(f"[ERROR] Gemini API runtime error: {e}")
+            # CRITICAL: Always fall back to rule-based response on ANY failure
             return self._fallback_response(symptoms, severity)
 
     def analyze_injury_image(self, image_data_url):
@@ -154,6 +184,13 @@ IMPORTANT: This is for informational purposes only. Always recommend professiona
 
             response = self.vision_model.generate_content([prompt, image])
 
+            # Validate response
+            if not response or not hasattr(response, "text") or not response.text:
+                print(
+                    "[WARNING] Gemini Vision returned empty response - using fallback"
+                )
+                return self._fallback_image_analysis()
+
             # Parse JSON from response
             import json
             import re
@@ -171,7 +208,8 @@ IMPORTANT: This is for informational purposes only. Always recommend professiona
             return result
 
         except Exception as e:
-            print(f"❌ Gemini Vision API error: {e}")
+            print(f"[ERROR] Gemini Vision API runtime error: {e}")
+            # CRITICAL: Always fall back to safe analysis on ANY failure
             return self._fallback_image_analysis()
 
     def _fallback_response(self, symptoms, severity):

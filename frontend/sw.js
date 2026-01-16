@@ -1,6 +1,6 @@
 // MedicSense AI - Service Worker
-const CACHE_NAME = 'medicsense-ai-v1';
-const RUNTIME_CACHE = 'medicsense-runtime-v1';
+const CACHE_NAME = 'medicsense-ai-v2';
+const RUNTIME_CACHE = 'medicsense-runtime-v2';
 
 // Assets to cache on install
 const PRECACHE_ASSETS = [
@@ -9,8 +9,7 @@ const PRECACHE_ASSETS = [
   '/style_ultra.css',
   '/script_ultra.js',
   '/env-loader.js',
-  '/firebase_config.js',
-  '/auth_logic.js',
+  '/load-env.js',
   '/whatsapp_service.js',
   'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css',
   'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Poppins:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap',
@@ -59,12 +58,11 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Skip API requests (always use network)
+  // API requests: Network Only (with cache fallback for offline)
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(
       fetch(request)
         .then((response) => {
-          // Cache successful API responses for offline use
           if (response.ok) {
             const responseClone = response.clone();
             caches.open(RUNTIME_CACHE).then((cache) => {
@@ -73,15 +71,41 @@ self.addEventListener('fetch', (event) => {
           }
           return response;
         })
-        .catch(() => {
-          // Return cached API response if offline
-          return caches.match(request);
-        })
+        .catch(() => caches.match(request))
     );
     return;
   }
 
-  // For other requests, try cache first, then network
+  // Local App Assets (HTML, JS, CSS) - NETWORK PRIMARY
+  // This solves the issue of "changes not showing up without hard refresh"
+  // We try network first, update cache, and fall back to cache only if offline.
+  if (url.origin === self.location.origin) {
+      event.respondWith(
+          fetch(request)
+            .then(response => {
+                // Update cache with fresh version
+                if (response.ok) {
+                    const clone = response.clone();
+                    caches.open(RUNTIME_CACHE).then(cache => cache.put(request, clone));
+                }
+                return response;
+            })
+            .catch(() => {
+                // Network failed, try cache
+                return caches.match(request).then(cached => {
+                    if (cached) return cached;
+                    // Fallback for navigation
+                    if (request.mode === 'navigate') {
+                        return caches.match('/index.html');
+                    }
+                });
+            })
+      );
+      return;
+  }
+
+  // Third Party Assets (Fonts, CDN) - CACHE PRIMARY
+  // These don't change often, so we save bandwidth
   event.respondWith(
     caches.match(request)
       .then((cachedResponse) => {
@@ -91,23 +115,14 @@ self.addEventListener('fetch', (event) => {
 
         return fetch(request)
           .then((response) => {
-            // Don't cache non-successful responses
             if (!response || response.status !== 200 || response.type !== 'basic') {
               return response;
             }
-
             const responseToCache = response.clone();
             caches.open(RUNTIME_CACHE).then((cache) => {
               cache.put(request, responseToCache);
             });
-
             return response;
-          })
-          .catch(() => {
-            // Return offline page for navigation requests
-            if (request.mode === 'navigate') {
-              return caches.match('/index.html');
-            }
           });
       })
   );
@@ -116,11 +131,9 @@ self.addEventListener('fetch', (event) => {
 // Background sync for offline actions
 self.addEventListener('sync', (event) => {
   console.log('[Service Worker] Background sync:', event.tag);
-
   if (event.tag === 'sync-appointments') {
     event.waitUntil(syncAppointments());
   }
-
   if (event.tag === 'sync-chat') {
     event.waitUntil(syncChat());
   }
@@ -129,7 +142,6 @@ self.addEventListener('sync', (event) => {
 // Push notifications
 self.addEventListener('push', (event) => {
   console.log('[Service Worker] Push notification received');
-
   const options = {
     body: event.data ? event.data.text() : 'New notification from MedicSense AI',
     icon: '/icon-192x192.png',
@@ -138,7 +150,6 @@ self.addEventListener('push', (event) => {
     tag: 'medicsense-notification',
     requireInteraction: true
   };
-
   event.waitUntil(
     self.registration.showNotification('MedicSense AI', options)
   );
@@ -146,21 +157,14 @@ self.addEventListener('push', (event) => {
 
 // Notification click handler
 self.addEventListener('notificationclick', (event) => {
-  console.log('[Service Worker] Notification clicked');
   event.notification.close();
-
-  event.waitUntil(
-    clients.openWindow('/')
-  );
+  event.waitUntil(clients.openWindow('/'));
 });
 
 // Helper functions
 async function syncAppointments() {
-  // Sync appointments when back online
   console.log('[Service Worker] Syncing appointments...');
 }
-
 async function syncChat() {
-  // Sync chat messages when back online
   console.log('[Service Worker] Syncing chat...');
 }

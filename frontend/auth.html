@@ -345,7 +345,7 @@
         </div>
     </div>
 
-    <script type="module" src="firebase_config.js"></script>
+    <!-- Firebase removed -->
     <script type="module" src="auth_logic.js"></script>
     <script>
         let currentPhone = '';
@@ -491,7 +491,7 @@
 
         async function handleGoogleAuth() {
             try {
-                const { signInWithPopup, auth, googleProvider } = await import('./firebase_config.js');
+                // Firebase removed
                 const result = await signInWithPopup(auth, googleProvider);
                 showSuccess('Login successful! Redirecting...');
                 setTimeout(() => {
