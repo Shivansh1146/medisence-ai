@@ -6,9 +6,21 @@
     "name": "Shivansh",
     "auth_method": "google",
     "created_at": "2026-01-16T22:06:30.947319",
-    "last_active": "2026-01-16T23:56:37.922398",
+    "last_active": "2026-01-17T00:52:18.675456",
     "account_status": "active",
     "google_id": "4wvRoFTd7oWy5aDz4y0I8Y6pRTk2",
     "google_email": "jaiswalshivansh122@gmail.com"
+  },
+  "a6af7a36-63e1-4fff-86cd-376f1d28b77b": {
+    "user_id": "a6af7a36-63e1-4fff-86cd-376f1d28b77b",
+    "email": "krishna308114@gmail.com",
+    "phone": "",
+    "name": "Marvelous",
+    "auth_method": "google",
+    "created_at": "2026-01-17T00:15:57.554046",
+    "last_active": "2026-01-17T00:20:07.393760",
+    "account_status": "active",
+    "google_id": "ytMWBzhyUFgNq2d2yYD3dI79ynM2",
+    "google_email": "krishna308114@gmail.com"
   }
 }

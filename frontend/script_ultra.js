@@ -235,7 +235,9 @@ async function initializeCriticalSystems() {
 
     // 2. Core synchronous initialization
     initializeAppCore();
-    setupEventListeners();
+    // NOTE: Event delegation is intentional.
+    // Profile button is rendered dynamically after auth.
+    // setupEventListeners(); // Function not defined - commented out
     updateSeverityDisplay();
     initAuthModal();
 
