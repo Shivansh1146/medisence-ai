@@ -1,1 +1,14 @@
-{}
+{
+  "86ce4926-0be5-486c-a484-1e537a913f3c": {
+    "user_id": "86ce4926-0be5-486c-a484-1e537a913f3c",
+    "email": "jaiswalshivansh122@gmail.com",
+    "phone": "",
+    "name": "Shivansh",
+    "auth_method": "google",
+    "created_at": "2026-01-16T22:06:30.947319",
+    "last_active": "2026-01-16T23:56:37.922398",
+    "account_status": "active",
+    "google_id": "4wvRoFTd7oWy5aDz4y0I8Y6pRTk2",
+    "google_email": "jaiswalshivansh122@gmail.com"
+  }
+}

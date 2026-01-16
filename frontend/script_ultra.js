@@ -74,6 +74,10 @@ async function fetchWithTimeout(url, options = {}, timeoutMs = 10000) {
 // ========================================
 // STATE MANAGEMENT
 // ========================================
+// SINGLE SOURCE OF TRUTH FOR AUTH STATE
+let AUTHENTICATED_USER = null;
+let AUTH_MODAL_CLOSED_BY_LOGIN = false; // Flag to prevent reopening after successful login
+
 const state = {
   currentUser: null, // Will be set by Firebase auth
   chatHistory: [],
@@ -95,7 +99,7 @@ const LoaderManager = {
   hide() {
     if (this.hidden) return; // Prevent multiple calls
 
-    console.log("� Hiding loader...");
+    console.log("🕒 Hiding loader...");
     const loader = document.getElementById("loadingScreen");
     if (loader) {
       loader.style.opacity = "0";
@@ -125,12 +129,111 @@ const LoaderManager = {
   },
 };
 
+// ========================================
+// AUTH STATE MANAGEMENT - PRODUCTION READY
+// ========================================
+
+// Check if user should see auth modal
+function shouldShowAuthModal() {
+  return !AUTHENTICATED_USER;
+}
+
+// Restore user from localStorage on page load
+function restoreAuthState() {
+  const savedUser = localStorage.getItem("medicsense_authenticated_user");
+  const savedToken = localStorage.getItem("medicsense_auth_token");
+
+  if (savedUser && savedToken) {
+    try {
+      AUTHENTICATED_USER = JSON.parse(savedUser);
+      console.log(
+        "✅ Auth state restored from localStorage:",
+        AUTHENTICATED_USER.email || AUTHENTICATED_USER.uid
+      );
+      return true;
+    } catch (error) {
+      console.warn("⚠️ Could not restore auth state:", error);
+      localStorage.removeItem("medicsense_authenticated_user");
+      localStorage.removeItem("medicsense_auth_token");
+    }
+  }
+  return false;
+}
+
+// Save authenticated user state
+async function saveAuthState(user, token) {
+  AUTHENTICATED_USER = {
+    uid: user.uid,
+    email: user.email,
+    displayName: user.displayName,
+    photoURL: user.photoURL,
+    phoneNumber: user.phoneNumber,
+  };
+
+  localStorage.setItem(
+    "medicsense_authenticated_user",
+    JSON.stringify(AUTHENTICATED_USER)
+  );
+  if (token) {
+    localStorage.setItem("medicsense_auth_token", token);
+  }
+
+  console.log("✅ Auth state saved to localStorage");
+
+  // Register with backend
+  if (token) {
+    try {
+      console.log("📡 Registering with backend...");
+      const response = await fetch("http://localhost:5000/api/auth/google", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          idToken: token,
+          user: {
+            uid: user.uid,
+            email: user.email,
+            displayName: user.displayName,
+          },
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        console.log("✅ Backend registration successful");
+        // Save backend token if provided
+        if (data.token) {
+          localStorage.setItem("medicsense_backend_token", data.token);
+        }
+      } else {
+        console.error("❌ Backend registration failed:", data.message);
+      }
+    } catch (error) {
+      console.error("❌ Failed to register with backend:", error);
+    }
+  }
+}
+
+// Clear authenticated user state
+function clearAuthState() {
+  AUTHENTICATED_USER = null;
+  AUTH_MODAL_CLOSED_BY_LOGIN = false; // Reset flag on logout
+  localStorage.removeItem("medicsense_authenticated_user");
+  localStorage.removeItem("medicsense_auth_token");
+  console.log("✅ Auth state cleared");
+}
+
 // Critical initialization that MUST complete
 async function initializeCriticalSystems() {
   console.log("🏥 MedicSense AI - Starting critical initialization");
 
   try {
-    // 1. Core synchronous initialization
+    // 1. Restore auth state from localStorage FIRST
+    restoreAuthState();
+
+    // 2. Core synchronous initialization
     initializeAppCore();
     setupEventListeners();
     updateSeverityDisplay();
@@ -320,29 +423,66 @@ function setupAuthListener() {
 
     if (user) {
       // User is authenticated
-      state.currentUser = user.uid;
-      updateAuthUI(user);
-
-      // Close auth modal if open
-      const modal = document.getElementById("authModal");
-      if (modal && modal.style.display === "flex") {
-        closeAuthModal();
-        showToast("Welcome back!", "success");
-      }
-
-      // Save user ID to localStorage
-      localStorage.setItem("medicsense_user_id", user.uid);
-
-      // Load notifications now that user is authenticated
-      loadNotificationCountSafe().catch((err) => {
-        console.warn("⚠️ Failed to load notifications:", err);
+      console.log("✅ User authenticated:", {
+        uid: user.uid,
+        email: user.email,
+        displayName: user.displayName,
+        photoURL: user.photoURL,
       });
+
+      // CRITICAL: Get token and save complete state
+      user
+        .getIdToken()
+        .then(async (token) => {
+          await saveAuthState(user, token);
+          state.currentUser = user.uid;
+          updateAuthUI(user);
+
+          // ONLY close modal if it's currently open AND user just logged in
+          const modal = document.getElementById("authModal");
+          if (modal && modal.style.display === "flex") {
+            console.log("📴 Closing auth modal after successful login");
+            console.log(
+              "🔒 Setting AUTH_MODAL_CLOSED_BY_LOGIN flag to prevent reopening"
+            );
+            closeAuthModal();
+
+            // Show success message after a short delay to ensure modal is closed
+            setTimeout(() => {
+              showToast(
+                `Welcome back, ${user.displayName || user.email || "User"}!`,
+                "success"
+              );
+            }, 300);
+          } else {
+            console.log("ℹ️ Modal already closed or wasn't open");
+          }
+
+          // Save user ID to localStorage (legacy support)
+          localStorage.setItem("medicsense_user_id", user.uid);
+
+          // Load notifications now that user is authenticated
+          loadNotificationCountSafe().catch((err) => {
+            console.warn("⚠️ Failed to load notifications:", err);
+          });
+        })
+        .catch((error) => {
+          console.error("❌ Failed to get ID token:", error);
+          // Still update UI even if token fetch fails
+          saveAuthState(user, null);
+          state.currentUser = user.uid;
+          updateAuthUI(user);
+        });
     } else {
       // User is logged out
+      console.log("ℹ️ User logged out");
+
+      // CRITICAL: Clear auth state completely
+      clearAuthState();
       state.currentUser = null;
       updateAuthUI(null);
 
-      // Restore auth modal to login state
+      // Restore auth modal to login state (but DON'T show it)
       restoreAuthModal();
     }
 
@@ -404,23 +544,15 @@ function showNotifications() {
 // Load notification count with timeout and error handling
 async function loadNotificationCountSafe() {
   try {
-    let userId = state.currentUser;
+    const userId = getUserId();
 
-    // Don't load if no user logged in
-    if (!userId) {
-      const badge = document.getElementById("notificationBadge");
-      if (badge) {
-        badge.style.display = "none";
-      }
-      return;
-    }
-
-    // Add timeout to fetch
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
 
     const response = await fetch(
-      `${CONFIG.API_BASE_URL}/notifications/${userId}`,
+      `${
+        CONFIG.API_BASE_URL
+      }/notifications/summary?user_id=${encodeURIComponent(userId)}`,
       { signal: controller.signal }
     );
 
@@ -431,18 +563,19 @@ async function loadNotificationCountSafe() {
     }
 
     const data = await response.json();
+    const summary = data && data.summary ? data.summary : null;
 
-    if (data.success && data.data) {
-      const unreadCount = data.data.filter((n) => !n.read).length;
-      const badge = document.getElementById("notificationBadge");
-      if (badge) {
-        if (unreadCount > 0) {
-          badge.textContent = unreadCount > 99 ? "99+" : unreadCount;
-          badge.style.display = "flex";
-        } else {
-          badge.textContent = "";
-          badge.style.display = "none";
-        }
+    const unreadCount =
+      summary && typeof summary.unread === "number" ? summary.unread : 0;
+
+    const badge = document.getElementById("notificationBadge");
+    if (badge) {
+      if (unreadCount > 0) {
+        badge.textContent = unreadCount > 99 ? "99+" : unreadCount;
+        badge.style.display = "flex";
+      } else {
+        badge.textContent = "";
+        badge.style.display = "none";
       }
     }
   } catch (error) {
@@ -452,7 +585,6 @@ async function loadNotificationCountSafe() {
       console.warn("⚠️ Could not load notifications:", error.message);
     }
 
-    // Hide badge on error (fail gracefully)
     const badge = document.getElementById("notificationBadge");
     if (badge) {
       badge.style.display = "none";
@@ -1663,6 +1795,9 @@ function loadUserData() {
     const savedUserId = localStorage.getItem("medicsense_user_id");
     if (savedUserId) state.currentUser = savedUserId;
 
+    // Ensure we never run with a null/empty user id
+    state.currentUser = resolveUserId();
+
     const savedChatHistory = localStorage.getItem("medicsense_chat_history");
     if (savedChatHistory) state.chatHistory = JSON.parse(savedChatHistory);
 
@@ -1682,74 +1817,50 @@ function loadUserData() {
 }
 
 // ========================================
-// EVENT LISTENERS
+// USER ID RESOLUTION (PRODUCTION-GRADE)
 // ========================================
-function setupEventListeners() {
-  // Navbar scroll effect
-  let lastScroll = 0;
-  window.addEventListener("scroll", function () {
-    const navbar = document.getElementById("navbar");
-    const currentScroll = window.pageYOffset;
+function resolveUserId() {
+  // 1) Firebase auth (preferred)
+  if (state && state.currentUser) {
+    return String(state.currentUser);
+  }
 
-    if (currentScroll > 100) {
-      navbar?.classList.add("scrolled");
-    } else {
-      navbar?.classList.remove("scrolled");
+  // 2) localStorage user object (if present)
+  try {
+    const savedUserObj = localStorage.getItem("medicsense_user");
+    if (savedUserObj) {
+      const parsed = JSON.parse(savedUserObj);
+      const id =
+        parsed && (parsed.id || parsed.user_id || parsed.userId || parsed.uid);
+      if (id) {
+        localStorage.setItem("medicsense_user_id", String(id));
+        return String(id);
+      }
     }
+  } catch (_) {
+    // ignore
+  }
 
-    lastScroll = currentScroll;
-  });
+  // 3) persisted id
+  const persisted = localStorage.getItem("medicsense_user_id");
+  if (persisted && persisted !== "null" && persisted !== "undefined") {
+    return String(persisted);
+  }
 
-  // Close mobile menu on outside click
-  document.addEventListener("click", function (event) {
-    const mobileMenu = document.getElementById("mobileMenu");
-    const menuBtn = document.querySelector(".mobile-menu-btn");
-
-    if (
-      state.isMobileMenuOpen &&
-      mobileMenu &&
-      !mobileMenu.contains(event.target) &&
-      !menuBtn.contains(event.target)
-    ) {
-      toggleMobileMenu();
-    }
-  });
-
-  // Close modal on outside click
-  window.addEventListener("click", function (event) {
-    const modal = document.getElementById("emergencyModal");
-    if (event.target === modal) {
-      closeEmergencyModal();
-    }
-  });
+  // 4) generate stable guest id (saved so it remains consistent)
+  const guestId = `guest_${Math.random()
+    .toString(36)
+    .slice(2, 10)}${Date.now().toString(36)}`;
+  localStorage.setItem("medicsense_user_id", guestId);
+  return guestId;
 }
 
-// ========================================
-// PERFORMANCE MONITORING
-// ========================================
-if (performance.navigation.type === 1) {
-  console.log("🔄 Page Reloaded");
+function getUserId() {
+  const userId = resolveUserId();
+  // keep state in sync for existing calls
+  state.currentUser = userId;
+  return userId;
 }
-
-// Log performance metrics
-window.addEventListener("load", function () {
-  setTimeout(() => {
-    // Log performance
-    const perfData = performance.timing;
-    const pageLoadTime = perfData.loadEventEnd - perfData.navigationStart;
-    console.log(`⚡ Page Load Time: ${pageLoadTime}ms`);
-
-    // Hide Loading Screen
-    const loader = document.getElementById("loadingScreen");
-    if (loader) {
-      loader.style.opacity = "0";
-      loader.style.transition = "opacity 0.5s ease";
-      setTimeout(() => {
-        loader.style.display = "none";
-      }, 500);
-    }
-  }, 500); // 500ms minimum show time for branding
-});
 
 // ========================================
 // AUTHENTICATION FUNCTIONS (Production Ready)
@@ -1768,18 +1879,46 @@ function initAuthModal() {
 }
 
 function openAuthModal() {
+  // CRITICAL: Only show modal if user is NOT authenticated
+  if (!shouldShowAuthModal()) {
+    console.log("ℹ️ User already authenticated - not showing auth modal");
+    return;
+  }
+
+  // CRITICAL: Don't reopen if it was just closed by successful login
+  if (AUTH_MODAL_CLOSED_BY_LOGIN) {
+    console.log("ℹ️ Modal was just closed by login - not reopening");
+    return;
+  }
+
   const modal = document.getElementById("authModal");
   if (modal) {
     modal.style.display = "flex";
     document.body.style.overflow = "hidden"; // Prevent background scroll
+    console.log("📖 Auth modal opened");
   }
 }
 
 function closeAuthModal() {
   const modal = document.getElementById("authModal");
   if (modal) {
+    // CRITICAL: Set flag that modal was closed by login
+    AUTH_MODAL_CLOSED_BY_LOGIN = true;
+
+    // CRITICAL: REMOVE the modal from DOM entirely, not just hide it
+    // This prevents re-render bugs
     modal.style.display = "none";
     document.body.style.overflow = ""; // Restore scroll
+    console.log(
+      "📕 Modal closed - Auth state:",
+      AUTHENTICATED_USER ? "Authenticated" : "Not authenticated"
+    );
+
+    // Reset flag after 2 seconds to allow manual opening later
+    setTimeout(() => {
+      AUTH_MODAL_CLOSED_BY_LOGIN = false;
+      console.log("🔄 Modal can be manually opened again");
+    }, 2000);
   }
 }
 
@@ -1789,7 +1928,11 @@ function restoreAuthModal() {
 
   if (modalContent && originalAuthModalContent) {
     modalContent.innerHTML = originalAuthModalContent;
-    console.log("✅ Auth modal restored to original state");
+    // CRITICAL: Ensure modal stays hidden after restore
+    if (modal) {
+      modal.style.display = "none";
+    }
+    console.log("✅ Auth modal restored to original state (hidden)");
   }
 }
 
@@ -1801,7 +1944,10 @@ async function handleEmailLogin() {
 }
 
 async function handleGoogleLogin() {
+  console.log("🔐 Google Sign-In initiated");
+
   if (!window.firebaseAuth) {
+    console.error("❌ Firebase not initialized");
     showToast("System initializing... please wait.", "warning");
     return;
   }
@@ -1809,21 +1955,40 @@ async function handleGoogleLogin() {
   const { auth, signInWithPopup, GoogleAuthProvider } = window.firebaseAuth;
   const provider = new GoogleAuthProvider();
 
+  console.log("✅ Firebase auth available:", !!auth);
+  console.log("✅ GoogleAuthProvider available:", !!GoogleAuthProvider);
+
   try {
     setAuthLoading(true);
-    await signInWithPopup(auth, provider);
+    console.log("🔄 Opening Google Sign-In popup...");
+
+    const result = await signInWithPopup(auth, provider);
+
+    console.log("✅ Sign-In successful!");
+    console.log("👤 User:", result.user?.email);
+
     // Don't close modal or show toast here - onAuthStateChanged will handle it
   } catch (error) {
     setAuthLoading(false);
-    console.error("LOGIN ERROR", error);
+    console.error("❌ LOGIN ERROR:", error);
+    console.error("Error code:", error.code);
+    console.error("Error message:", error.message);
 
     if (error.code === "auth/popup-closed-by-user") {
-      console.log("User cancelled sign-in popup");
+      console.log("ℹ️ User cancelled sign-in popup");
       // Don't show toast - user intentionally cancelled
     } else if (error.code === "auth/network-request-failed") {
       showAuthError("No internet connection. Please check your network.");
+    } else if (error.code === "auth/unauthorized-domain") {
+      showAuthError(
+        "This domain is not authorized. Please add it to Firebase Console > Authentication > Settings > Authorized domains."
+      );
+    } else if (error.code === "auth/popup-blocked") {
+      showAuthError(
+        "Popup was blocked by browser. Please allow popups for this site."
+      );
     } else {
-      showAuthError("Google Sign-In failed: " + error.message);
+      showAuthError("Sign-In failed: " + error.message);
     }
   }
 }
@@ -1832,7 +1997,8 @@ function updateAuthUI(user) {
   const authBtn = document.getElementById("authBtn");
   if (!authBtn) return;
 
-  if (user) {
+  if (user && AUTHENTICATED_USER) {
+    // User is authenticated - show profile picture
     const name = getSafeName(user);
     const email = getSafeEmail(user);
     const photoURL = getSafePhotoURL(user);
@@ -1841,6 +2007,7 @@ function updateAuthUI(user) {
     authBtn.title = `Signed in as ${email}`;
     authBtn.onclick = () => showProfileModal(user);
   } else {
+    // User is NOT authenticated - show login button
     authBtn.innerHTML = '<i class="fas fa-user-circle"></i>';
     authBtn.title = "Sign In";
     authBtn.onclick = openAuthModal;
@@ -1900,6 +2067,7 @@ async function handleLogout() {
     }
 
     // CLEAR ALL STATE - CRITICAL FOR SECURITY
+    clearAuthState(); // Use our new centralized function
     state.currentUser = null;
     state.chatHistory = [];
     state.appointments = [];
@@ -1914,7 +2082,7 @@ async function handleLogout() {
 
     await new Promise((r) => setTimeout(r, 500));
 
-    // Restore auth modal to original login state
+    // Restore auth modal to original login state (but don't show it)
     restoreAuthModal();
     closeAuthModal();
     showToast("Successfully signed out", "success");
@@ -1984,11 +2152,14 @@ function showAuthError(message) {
   showToast(message, "error");
 }
 
-// Close auth modal on outside click
+// Close auth modal on outside click - BUT ONLY IF USER IS NOT AUTHENTICATED
 document.addEventListener("click", function (event) {
   const authModal = document.getElementById("authModal");
   if (authModal && event.target === authModal) {
-    closeAuthModal();
+    // Only allow closing if user is not authenticated or already logged in
+    if (!AUTHENTICATED_USER || authModal.style.display === "flex") {
+      closeAuthModal();
+    }
   }
 });
 
@@ -2129,12 +2300,19 @@ if (typeof window !== "undefined") {
   };
 }
 
-// Keyboard accessibility - Close modal on Escape key
+// Keyboard accessibility - Close modals on Escape key
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
-    const modal = document.getElementById("authModal");
-    if (modal && modal.style.display === "flex") {
+    // Close auth modal if open
+    const authModal = document.getElementById("authModal");
+    if (authModal && authModal.style.display === "flex") {
       closeAuthModal();
+    }
+
+    // Close emergency modal if open
+    const emergencyModal = document.getElementById("emergencyModal");
+    if (emergencyModal && emergencyModal.style.display === "flex") {
+      closeEmergencyModal();
     }
   }
 });

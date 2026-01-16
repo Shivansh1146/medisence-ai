@@ -1,461 +1,626 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Notifications - MedicSense AI</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="style_ultra.css">
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link rel="stylesheet" href="style_ultra.css" />
     <style>
+      .notifications-container {
+        min-height: 100vh;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 2rem;
+      }
+      .notifications-header {
+        background: white;
+        border-radius: 20px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .notifications-header h1 {
+        margin: 0;
+        color: #1e293b;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+      }
+      .notifications-header-actions {
+        display: flex;
+        gap: 1rem;
+      }
+      .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        border-radius: 10px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+      }
+      .btn-secondary {
+        background: #e2e8f0;
+        color: #1e293b;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        border-radius: 10px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .btn-secondary:hover {
+        background: #cbd5e1;
+      }
+      .notifications-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+      }
+      .stat-card {
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+      }
+      .stat-card h3 {
+        color: #64748b;
+        font-size: 0.875rem;
+        margin: 0 0 0.5rem 0;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      .stat-card .stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #667eea;
+        margin: 0;
+      }
+      .notifications-section {
+        background: white;
+        border-radius: 20px;
+        padding: 2rem;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      }
+      .notifications-section h2 {
+        color: #1e293b;
+        margin: 0 0 1.5rem 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .notifications-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+      .notification-item {
+        border: 2px solid #e2e8f0;
+        border-radius: 15px;
+        padding: 1.5rem;
+        transition: all 0.3s;
+        position: relative;
+        cursor: pointer;
+      }
+      .notification-item:hover {
+        border-color: #667eea;
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.1);
+        transform: translateY(-2px);
+      }
+      .notification-item.unread {
+        background: #f0f9ff;
+        border-color: #667eea;
+        border-left: 4px solid #667eea;
+      }
+      .notification-item.read {
+        background: #f8fafc;
+        opacity: 0.8;
+      }
+      .notification-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 0.75rem;
+      }
+      .notification-title {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        flex: 1;
+      }
+      .notification-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        flex-shrink: 0;
+      }
+      .notification-icon.appointment {
+        background: #dbeafe;
+        color: #3b82f6;
+      }
+      .notification-icon.medication {
+        background: #fef3c7;
+        color: #f59e0b;
+      }
+      .notification-icon.health_tip {
+        background: #d1fae5;
+        color: #10b981;
+      }
+      .notification-icon.emergency {
+        background: #fee2e2;
+        color: #ef4444;
+      }
+      .notification-icon.system {
+        background: #e0e7ff;
+        color: #6366f1;
+      }
+      .notification-content h3 {
+        margin: 0 0 0.25rem 0;
+        color: #1e293b;
+        font-size: 1.1rem;
+      }
+      .notification-content p {
+        margin: 0;
+        color: #64748b;
+        font-size: 0.95rem;
+        line-height: 1.5;
+      }
+      .notification-time {
+        color: #94a3b8;
+        font-size: 0.875rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .notification-actions {
+        display: flex;
+        gap: 0.5rem;
+      }
+      .notification-action-btn {
+        background: none;
+        border: none;
+        color: #64748b;
+        cursor: pointer;
+        padding: 0.5rem;
+        border-radius: 8px;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .notification-action-btn:hover {
+        background: #f1f5f9;
+        color: #1e293b;
+      }
+      .unread-badge {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        width: 12px;
+        height: 12px;
+        background: #ef4444;
+        border-radius: 50%;
+        border: 2px solid white;
+      }
+      .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        color: #64748b;
+      }
+      .empty-state i {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+        color: #cbd5e1;
+      }
+      .empty-state h3 {
+        color: #1e293b;
+        margin-bottom: 0.5rem;
+      }
+      .empty-state p {
+        color: #64748b;
+      }
+      .back-btn {
+        position: fixed;
+        top: 2rem;
+        left: 2rem;
+        background: white;
+        border: none;
+        padding: 0.75rem 1rem;
+        border-radius: 10px;
+        cursor: pointer;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s;
+        z-index: 100;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #1e293b;
+        font-weight: 500;
+      }
+      .back-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+      }
+      .filter-tabs {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+      }
+      .filter-tab {
+        padding: 0.5rem 1rem;
+        border: 2px solid #e2e8f0;
+        background: white;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-weight: 500;
+        color: #64748b;
+      }
+      .filter-tab:hover {
+        border-color: #667eea;
+        color: #667eea;
+      }
+      .filter-tab.active {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-color: transparent;
+      }
+      @media (max-width: 768px) {
         .notifications-container {
-            min-height: 100vh;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 2rem;
+          padding: 1rem;
         }
         .notifications-header {
-            background: white;
-            border-radius: 20px;
-            padding: 2rem;
-            margin-bottom: 2rem;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .notifications-header h1 {
-            margin: 0;
-            color: #1e293b;
-            display: flex;
-            align-items: center;
-            gap: 1rem;
+          flex-direction: column;
+          gap: 1rem;
+          align-items: flex-start;
         }
         .notifications-header-actions {
-            display: flex;
-            gap: 1rem;
+          width: 100%;
+          flex-direction: column;
         }
-        .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            padding: 0.75rem 1.5rem;
-            border-radius: 10px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
-        }
-        .btn-secondary {
-            background: #e2e8f0;
-            color: #1e293b;
-            border: none;
-            padding: 0.75rem 1.5rem;
-            border-radius: 10px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        .btn-secondary:hover {
-            background: #cbd5e1;
-        }
-        .notifications-stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-        .stat-card {
-            background: white;
-            border-radius: 15px;
-            padding: 1.5rem;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-        }
-        .stat-card h3 {
-            color: #64748b;
-            font-size: 0.875rem;
-            margin: 0 0 0.5rem 0;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        .stat-card .stat-value {
-            font-size: 2rem;
-            font-weight: 700;
-            color: #667eea;
-            margin: 0;
-        }
-        .notifications-section {
-            background: white;
-            border-radius: 20px;
-            padding: 2rem;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-        }
-        .notifications-section h2 {
-            color: #1e293b;
-            margin: 0 0 1.5rem 0;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        .notifications-list {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
-        .notification-item {
-            border: 2px solid #e2e8f0;
-            border-radius: 15px;
-            padding: 1.5rem;
-            transition: all 0.3s;
-            position: relative;
-            cursor: pointer;
-        }
-        .notification-item:hover {
-            border-color: #667eea;
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.1);
-            transform: translateY(-2px);
-        }
-        .notification-item.unread {
-            background: #f0f9ff;
-            border-color: #667eea;
-            border-left: 4px solid #667eea;
-        }
-        .notification-item.read {
-            background: #f8fafc;
-            opacity: 0.8;
-        }
-        .notification-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 0.75rem;
-        }
-        .notification-title {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            flex: 1;
-        }
-        .notification-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.25rem;
-            flex-shrink: 0;
-        }
-        .notification-icon.appointment {
-            background: #dbeafe;
-            color: #3b82f6;
-        }
-        .notification-icon.medication {
-            background: #fef3c7;
-            color: #f59e0b;
-        }
-        .notification-icon.health_tip {
-            background: #d1fae5;
-            color: #10b981;
-        }
-        .notification-icon.emergency {
-            background: #fee2e2;
-            color: #ef4444;
-        }
-        .notification-icon.system {
-            background: #e0e7ff;
-            color: #6366f1;
-        }
-        .notification-content h3 {
-            margin: 0 0 0.25rem 0;
-            color: #1e293b;
-            font-size: 1.1rem;
-        }
-        .notification-content p {
-            margin: 0;
-            color: #64748b;
-            font-size: 0.95rem;
-            line-height: 1.5;
-        }
-        .notification-time {
-            color: #94a3b8;
-            font-size: 0.875rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        .notification-actions {
-            display: flex;
-            gap: 0.5rem;
-        }
-        .notification-action-btn {
-            background: none;
-            border: none;
-            color: #64748b;
-            cursor: pointer;
-            padding: 0.5rem;
-            border-radius: 8px;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .notification-action-btn:hover {
-            background: #f1f5f9;
-            color: #1e293b;
-        }
-        .unread-badge {
-            position: absolute;
-            top: 1rem;
-            right: 1rem;
-            width: 12px;
-            height: 12px;
-            background: #ef4444;
-            border-radius: 50%;
-            border: 2px solid white;
-        }
-        .empty-state {
-            text-align: center;
-            padding: 4rem 2rem;
-            color: #64748b;
-        }
-        .empty-state i {
-            font-size: 4rem;
-            margin-bottom: 1rem;
-            color: #cbd5e1;
-        }
-        .empty-state h3 {
-            color: #1e293b;
-            margin-bottom: 0.5rem;
-        }
-        .empty-state p {
-            color: #64748b;
+        .notifications-header-actions button {
+          width: 100%;
         }
         .back-btn {
-            position: fixed;
-            top: 2rem;
-            left: 2rem;
-            background: white;
-            border: none;
-            padding: 0.75rem 1rem;
-            border-radius: 10px;
-            cursor: pointer;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-            transition: all 0.3s;
-            z-index: 100;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            color: #1e293b;
-            font-weight: 500;
+          top: 1rem;
+          left: 1rem;
         }
-        .back-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-        }
-        .filter-tabs {
-            display: flex;
-            gap: 0.5rem;
-            margin-bottom: 1.5rem;
-            flex-wrap: wrap;
-        }
-        .filter-tab {
-            padding: 0.5rem 1rem;
-            border: 2px solid #e2e8f0;
-            background: white;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-weight: 500;
-            color: #64748b;
-        }
-        .filter-tab:hover {
-            border-color: #667eea;
-            color: #667eea;
-        }
-        .filter-tab.active {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-color: transparent;
-        }
-        @media (max-width: 768px) {
-            .notifications-container {
-                padding: 1rem;
-            }
-            .notifications-header {
-                flex-direction: column;
-                gap: 1rem;
-                align-items: flex-start;
-            }
-            .notifications-header-actions {
-                width: 100%;
-                flex-direction: column;
-            }
-            .notifications-header-actions button {
-                width: 100%;
-            }
-            .back-btn {
-                top: 1rem;
-                left: 1rem;
-            }
-        }
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div class="notifications-container">
-        <button class="back-btn" onclick="window.location.href='index.html'">
-            <i class="fas fa-arrow-left"></i> Back
-        </button>
+      <button class="back-btn" onclick="window.location.href='index.html'">
+        <i class="fas fa-arrow-left"></i> Back
+      </button>
 
-        <div class="notifications-header">
-            <h1>
-                <i class="fas fa-bell"></i>
-                Notifications
-            </h1>
-            <div class="notifications-header-actions">
-                <button class="btn-secondary" onclick="markAllAsRead()">
-                    <i class="fas fa-check-double"></i> Mark All Read
-                </button>
-                <button class="btn-primary" onclick="refreshNotifications()">
-                    <i class="fas fa-sync-alt"></i> Refresh
-                </button>
-            </div>
+      <div class="notifications-header">
+        <h1>
+          <i class="fas fa-bell"></i>
+          Notifications
+        </h1>
+        <div class="notifications-header-actions">
+          <button class="btn-secondary" onclick="markAllAsRead()">
+            <i class="fas fa-check-double"></i> Mark All Read
+          </button>
+          <button class="btn-primary" onclick="refreshNotifications()">
+            <i class="fas fa-sync-alt"></i> Refresh
+          </button>
+        </div>
+      </div>
+
+      <div class="notifications-stats">
+        <div class="stat-card">
+          <h3>Total Notifications</h3>
+          <p class="stat-value" id="totalCount">0</p>
+        </div>
+        <div class="stat-card">
+          <h3>Unread</h3>
+          <p class="stat-value" id="unreadCount">0</p>
+        </div>
+        <div class="stat-card">
+          <h3>Appointments</h3>
+          <p class="stat-value" id="appointmentCount">0</p>
+        </div>
+        <div class="stat-card">
+          <h3>Medications</h3>
+          <p class="stat-value" id="medicationCount">0</p>
+        </div>
+      </div>
+
+      <div class="notifications-section">
+        <h2><i class="fas fa-list"></i> All Notifications</h2>
+
+        <div class="filter-tabs">
+          <button
+            class="filter-tab active"
+            onclick="filterNotifications('all')"
+          >
+            All
+          </button>
+          <button class="filter-tab" onclick="filterNotifications('unread')">
+            Unread
+          </button>
+          <button
+            class="filter-tab"
+            onclick="filterNotifications('appointment')"
+          >
+            Appointments
+          </button>
+          <button
+            class="filter-tab"
+            onclick="filterNotifications('medication')"
+          >
+            Medications
+          </button>
+          <button
+            class="filter-tab"
+            onclick="filterNotifications('health_tip')"
+          >
+            Health Tips
+          </button>
         </div>
 
-        <div class="notifications-stats">
-            <div class="stat-card">
-                <h3>Total Notifications</h3>
-                <p class="stat-value" id="totalCount">0</p>
-            </div>
-            <div class="stat-card">
-                <h3>Unread</h3>
-                <p class="stat-value" id="unreadCount">0</p>
-            </div>
-            <div class="stat-card">
-                <h3>Appointments</h3>
-                <p class="stat-value" id="appointmentCount">0</p>
-            </div>
-            <div class="stat-card">
-                <h3>Medications</h3>
-                <p class="stat-value" id="medicationCount">0</p>
-            </div>
+        <div class="notifications-list" id="notificationsList">
+          <div class="empty-state">
+            <i class="fas fa-bell-slash"></i>
+            <h3>No notifications</h3>
+            <p>You're all caught up!</p>
+          </div>
         </div>
-
-        <div class="notifications-section">
-            <h2><i class="fas fa-list"></i> All Notifications</h2>
-
-            <div class="filter-tabs">
-                <button class="filter-tab active" onclick="filterNotifications('all')">All</button>
-                <button class="filter-tab" onclick="filterNotifications('unread')">Unread</button>
-                <button class="filter-tab" onclick="filterNotifications('appointment')">Appointments</button>
-                <button class="filter-tab" onclick="filterNotifications('medication')">Medications</button>
-                <button class="filter-tab" onclick="filterNotifications('health_tip')">Health Tips</button>
-            </div>
-
-            <div class="notifications-list" id="notificationsList">
-                <div class="empty-state">
-                    <i class="fas fa-bell-slash"></i>
-                    <h3>No notifications</h3>
-                    <p>You're all caught up!</p>
-                </div>
-            </div>
-        </div>
+      </div>
     </div>
 
     <script src="env-config.js"></script>
     <script type="module">
-        // Firebase removed
+      // Firebase removed
 
-        const CONFIG = {
-            API_BASE_URL: (window.ENV && window.ENV.API_BASE_URL) || "http://localhost:5000/api"
-        };
+      const CONFIG = {
+        API_BASE_URL:
+          (window.ENV && window.ENV.API_BASE_URL) ||
+          "http://localhost:5000/api",
+      };
 
-        let currentUser = null;
-        let allNotifications = [];
-        let currentFilter = 'all';
+      let currentUser = null;
+      let allNotifications = [];
+      let currentFilter = "all";
 
+      function resolveUserId() {
+        // 1) If Firebase auth is available and has a user (optional)
+        try {
+          if (
+            typeof auth !== "undefined" &&
+            auth &&
+            auth.currentUser &&
+            auth.currentUser.uid
+          ) {
+            localStorage.setItem(
+              "medicsense_user_id",
+              String(auth.currentUser.uid)
+            );
+            return String(auth.currentUser.uid);
+          }
+        } catch (e) {
+          // ignore
+        }
+
+        // 2) localStorage user object
+        try {
+          const savedUser = localStorage.getItem("medicsense_user");
+          if (savedUser) {
+            const userData = JSON.parse(savedUser);
+            const id =
+              userData &&
+              (userData.id ||
+                userData.user_id ||
+                userData.userId ||
+                userData.uid);
+            if (id) {
+              localStorage.setItem("medicsense_user_id", String(id));
+              return String(id);
+            }
+          }
+        } catch (e) {
+          // ignore
+        }
+
+        // 3) persisted id
+        const persisted = localStorage.getItem("medicsense_user_id");
+        if (persisted && persisted !== "null" && persisted !== "undefined") {
+          return String(persisted);
+        }
+
+        // 4) stable guest id
+        const guestId = `guest_${Math.random()
+          .toString(36)
+          .slice(2, 10)}${Date.now().toString(36)}`;
+        localStorage.setItem("medicsense_user_id", guestId);
+        return guestId;
+      }
+
+      // Resolve immediately so we never call API with null
+      currentUser = resolveUserId();
+
+      // If auth listener exists, keep it, but never allow null user_id
+      if (
+        typeof onAuthStateChanged === "function" &&
+        typeof auth !== "undefined" &&
+        auth
+      ) {
         onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                currentUser = user.uid;
-                await loadNotifications();
-            } else {
-                // Try to get user ID from localStorage or use default
-                const savedUser = localStorage.getItem('medicsense_user');
-                if (savedUser) {
-                    const userData = JSON.parse(savedUser);
-                    currentUser = userData.id || 'anonymous';
-                } else {
-                    currentUser = 'anonymous';
-                }
-                await loadNotifications();
-            }
+          if (user && user.uid) {
+            currentUser = String(user.uid);
+            localStorage.setItem("medicsense_user_id", currentUser);
+          } else {
+            currentUser = resolveUserId();
+          }
+          await loadNotifications();
         });
+      } else {
+        // No auth available: just load notifications with resolved user id
+        loadNotifications();
+      }
 
-        async function loadNotifications() {
-            try {
-                const response = await fetch(`${CONFIG.API_BASE_URL}/notifications/${currentUser}`);
-                const data = await response.json();
+      async function loadNotifications() {
+        try {
+          // Map UI filters to API contract
+          const apiFilterMap = {
+            all: "all",
+            unread: "unread",
+            appointment: "appointments",
+            medication: "medications",
+            health_tip: "health_tips",
+          };
 
-                if (data.success && data.data) {
-                    allNotifications = data.data;
-                    updateStats();
-                    displayNotifications();
-                } else {
-                    console.error('Failed to load notifications');
-                    showEmptyState();
-                }
-            } catch (error) {
-                console.error('Error loading notifications:', error);
-                showEmptyState();
-            }
+          const apiFilter = apiFilterMap[currentFilter] || "all";
+
+          const response = await fetch(
+            `${CONFIG.API_BASE_URL}/notifications?filter=${encodeURIComponent(
+              apiFilter
+            )}&limit=100&user_id=${encodeURIComponent(resolveUserId())}`
+          );
+          const data = await response.json();
+
+          if (data.success) {
+            // Backend returns frontend-compatible structure in data.data
+            allNotifications = Array.isArray(data.data) ? data.data : [];
+
+            await loadNotificationSummary();
+            displayNotifications();
+          } else {
+            console.error("Failed to load notifications");
+            allNotifications = [];
+            await loadNotificationSummary(true);
+            showEmptyState();
+          }
+        } catch (error) {
+          console.error("Error loading notifications:", error);
+          allNotifications = [];
+          await loadNotificationSummary(true);
+          showEmptyState();
+        }
+      }
+
+      async function loadNotificationSummary(forceEmpty = false) {
+        if (forceEmpty) {
+          document.getElementById("totalCount").textContent = 0;
+          document.getElementById("unreadCount").textContent = 0;
+          document.getElementById("appointmentCount").textContent = 0;
+          document.getElementById("medicationCount").textContent = 0;
+          return;
         }
 
-        function updateStats() {
-            const total = allNotifications.length;
-            const unread = allNotifications.filter(n => !n.read).length;
-            const appointments = allNotifications.filter(n => n.type === 'appointment').length;
-            const medications = allNotifications.filter(n => n.type === 'medication').length;
+        try {
+          const response = await fetch(
+            `${
+              CONFIG.API_BASE_URL
+            }/notifications/summary?user_id=${encodeURIComponent(
+              resolveUserId()
+            )}`
+          );
+          const data = await response.json();
 
-            document.getElementById('totalCount').textContent = total;
-            document.getElementById('unreadCount').textContent = unread;
-            document.getElementById('appointmentCount').textContent = appointments;
-            document.getElementById('medicationCount').textContent = medications;
+          const summary =
+            data && data.summary
+              ? data.summary
+              : {
+                  total: 0,
+                  unread: 0,
+                  appointments: 0,
+                  medications: 0,
+                };
+
+          document.getElementById("totalCount").textContent =
+            summary.total || 0;
+          document.getElementById("unreadCount").textContent =
+            summary.unread || 0;
+          document.getElementById("appointmentCount").textContent =
+            summary.appointments || 0;
+          document.getElementById("medicationCount").textContent =
+            summary.medications || 0;
+        } catch (e) {
+          // fall back to computed stats if summary endpoint fails
+          updateStats();
+        }
+      }
+
+      function updateStats() {
+        const total = allNotifications.length;
+        const unread = allNotifications.filter((n) => !n.read).length;
+        const appointments = allNotifications.filter(
+          (n) => n.type === "appointment"
+        ).length;
+        const medications = allNotifications.filter(
+          (n) => n.type === "medication"
+        ).length;
+
+        document.getElementById("totalCount").textContent = total;
+        document.getElementById("unreadCount").textContent = unread;
+        document.getElementById("appointmentCount").textContent = appointments;
+        document.getElementById("medicationCount").textContent = medications;
+      }
+
+      function displayNotifications() {
+        const listElement = document.getElementById("notificationsList");
+
+        // Filter notifications based on current filter
+        let filteredNotifications = allNotifications;
+        if (currentFilter === "unread") {
+          filteredNotifications = allNotifications.filter((n) => !n.read);
+        } else if (currentFilter !== "all") {
+          filteredNotifications = allNotifications.filter(
+            (n) => n.type === currentFilter
+          );
         }
 
-        function displayNotifications() {
-            const listElement = document.getElementById('notificationsList');
+        // Sort by timestamp (newest first)
+        filteredNotifications.sort(
+          (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
+        );
 
-            // Filter notifications based on current filter
-            let filteredNotifications = allNotifications;
-            if (currentFilter === 'unread') {
-                filteredNotifications = allNotifications.filter(n => !n.read);
-            } else if (currentFilter !== 'all') {
-                filteredNotifications = allNotifications.filter(n => n.type === currentFilter);
-            }
+        if (filteredNotifications.length === 0) {
+          showEmptyState();
+          return;
+        }
 
-            // Sort by timestamp (newest first)
-            filteredNotifications.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        listElement.innerHTML = filteredNotifications
+          .map((notification) => {
+            const timeAgo = getTimeAgo(notification.timestamp);
+            const iconClass = getIconClass(notification.type);
+            const icon = getIcon(notification.type);
 
-            if (filteredNotifications.length === 0) {
-                showEmptyState();
-                return;
-            }
-
-            listElement.innerHTML = filteredNotifications.map(notification => {
-                const timeAgo = getTimeAgo(notification.timestamp);
-                const iconClass = getIconClass(notification.type);
-                const icon = getIcon(notification.type);
-
-                return `
-                    <div class="notification-item ${notification.read ? 'read' : 'unread'}" onclick="markAsRead('${notification.id}')">
-                        ${!notification.read ? '<span class="unread-badge"></span>' : ''}
+            return `
+                    <div class="notification-item ${
+                      notification.read ? "read" : "unread"
+                    }" onclick="markAsRead('${notification.id}')">
+                        ${
+                          !notification.read
+                            ? '<span class="unread-badge"></span>'
+                            : ""
+                        }
                         <div class="notification-header">
                             <div class="notification-title">
                                 <div class="notification-icon ${iconClass}">
@@ -467,7 +632,9 @@
                                 </div>
                             </div>
                             <div class="notification-actions">
-                                <button class="notification-action-btn" onclick="event.stopPropagation(); markAsRead('${notification.id}')" title="Mark as read">
+                                <button class="notification-action-btn" onclick="event.stopPropagation(); markAsRead('${
+                                  notification.id
+                                }')" title="Mark as read">
                                     <i class="fas fa-check"></i>
                                 </button>
                             </div>
@@ -478,118 +645,139 @@
                         </div>
                     </div>
                 `;
-            }).join('');
-        }
+          })
+          .join("");
+      }
 
-        function getIconClass(type) {
-            const classes = {
-                'appointment': 'appointment',
-                'medication': 'medication',
-                'health_tip': 'health_tip',
-                'emergency': 'emergency',
-                'system': 'system'
-            };
-            return classes[type] || 'system';
-        }
+      function getIconClass(type) {
+        const classes = {
+          appointment: "appointment",
+          medication: "medication",
+          health_tip: "health_tip",
+          emergency: "emergency",
+          system: "system",
+        };
+        return classes[type] || "system";
+      }
 
-        function getIcon(type) {
-            const icons = {
-                'appointment': 'fas fa-calendar-check',
-                'medication': 'fas fa-pills',
-                'health_tip': 'fas fa-lightbulb',
-                'emergency': 'fas fa-exclamation-triangle',
-                'system': 'fas fa-info-circle'
-            };
-            return icons[type] || 'fas fa-info-circle';
-        }
+      function getIcon(type) {
+        const icons = {
+          appointment: "fas fa-calendar-check",
+          medication: "fas fa-pills",
+          health_tip: "fas fa-lightbulb",
+          emergency: "fas fa-exclamation-triangle",
+          system: "fas fa-info-circle",
+        };
+        return icons[type] || "fas fa-info-circle";
+      }
 
-        function getTimeAgo(timestamp) {
-            const now = new Date();
-            const time = new Date(timestamp);
-            const diffMs = now - time;
-            const diffMins = Math.floor(diffMs / 60000);
-            const diffHours = Math.floor(diffMs / 3600000);
-            const diffDays = Math.floor(diffMs / 86400000);
+      function getTimeAgo(timestamp) {
+        const now = new Date();
+        const time = new Date(timestamp);
+        const diffMs = now - time;
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffHours = Math.floor(diffMs / 3600000);
+        const diffDays = Math.floor(diffMs / 86400000);
 
-            if (diffMins < 1) return 'Just now';
-            if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;
-            if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
-            if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
-            return time.toLocaleDateString();
-        }
+        if (diffMins < 1) return "Just now";
+        if (diffMins < 60)
+          return `${diffMins} minute${diffMins > 1 ? "s" : ""} ago`;
+        if (diffHours < 24)
+          return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
+        if (diffDays < 7)
+          return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
+        return time.toLocaleDateString();
+      }
 
-        function showEmptyState() {
-            const listElement = document.getElementById('notificationsList');
-            listElement.innerHTML = `
+      function showEmptyState() {
+        const listElement = document.getElementById("notificationsList");
+        listElement.innerHTML = `
                 <div class="empty-state">
                     <i class="fas fa-bell-slash"></i>
                     <h3>No notifications</h3>
-                    <p>${currentFilter === 'all' ? "You're all caught up!" : `No ${currentFilter} notifications found.`}</p>
+                    <p>${
+                      currentFilter === "all"
+                        ? "You're all caught up!"
+                        : `No ${currentFilter} notifications found.`
+                    }</p>
                 </div>
             `;
-        }
+      }
 
-        async function markAsRead(notificationId) {
-            try {
-                const response = await fetch(`${CONFIG.API_BASE_URL}/notifications/${notificationId}/read`, {
-                    method: 'PUT'
-                });
-
-                if (response.ok) {
-                    // Update local state
-                    const notification = allNotifications.find(n => n.id === notificationId);
-                    if (notification) {
-                        notification.read = true;
-                        updateStats();
-                        displayNotifications();
-                    }
-                }
-            } catch (error) {
-                console.error('Error marking notification as read:', error);
+      async function markAsRead(notificationId) {
+        try {
+          const uid = resolveUserId();
+          const response = await fetch(
+            `${CONFIG.API_BASE_URL}/notifications/${encodeURIComponent(
+              notificationId
+            )}/read`,
+            {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ user_id: uid }),
             }
-        }
+          );
 
-        async function markAllAsRead() {
-            if (!confirm('Mark all notifications as read?')) return;
-
-            try {
-                const unreadNotifications = allNotifications.filter(n => !n.read);
-                for (const notification of unreadNotifications) {
-                    await markAsRead(notification.id);
-                }
-                updateStats();
-                displayNotifications();
-            } catch (error) {
-                console.error('Error marking all as read:', error);
-            }
-        }
-
-        function filterNotifications(filter) {
-            currentFilter = filter;
-
-            // Update filter tabs
-            document.querySelectorAll('.filter-tab').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            event.target.classList.add('active');
-
+          const data = await response.json();
+          if (data.success) {
+            // Update local state
+            allNotifications = allNotifications.map((n) =>
+              n.id === notificationId ? { ...n, read: true } : n
+            );
             displayNotifications();
+            await loadNotificationSummary();
+          }
+        } catch (error) {
+          console.error("Error marking as read:", error);
         }
+      }
 
-        async function refreshNotifications() {
-            await loadNotifications();
-            if (window.showToast) {
-                window.showToast('Notifications refreshed!', 'success');
-            } else {
-                alert('Notifications refreshed!');
+      async function markAllAsRead() {
+        try {
+          const uid = resolveUserId();
+          const response = await fetch(
+            `${CONFIG.API_BASE_URL}/notifications/read-all`,
+            {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ user_id: uid }),
             }
-        }
+          );
 
-        // Make functions globally available
-        window.markAsRead = markAsRead;
-        window.markAllAsRead = markAllAsRead;
-        window.filterNotifications = filterNotifications;
-        window.refreshNotifications = refreshNotifications;
+          const data = await response.json();
+          if (data.success) {
+            allNotifications = allNotifications.map((n) => ({
+              ...n,
+              read: true,
+            }));
+            displayNotifications();
+            await loadNotificationSummary();
+          }
+        } catch (error) {
+          console.error("Error marking all as read:", error);
+        }
+      }
+
+      async function refreshNotifications() {
+        try {
+          const uid = resolveUserId();
+          await fetch(`${CONFIG.API_BASE_URL}/notifications/refresh`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ user_id: uid }),
+          });
+
+          await loadNotifications();
+        } catch (error) {
+          console.error("Error refreshing notifications:", error);
+        }
+      }
+
+      // Make functions globally available
+      window.markAsRead = markAsRead;
+      window.markAllAsRead = markAllAsRead;
+      window.filterNotifications = filterNotifications;
+      window.refreshNotifications = refreshNotifications;
     </script>
-</body>
+  </body>
 </html>

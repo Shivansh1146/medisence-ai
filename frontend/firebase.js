@@ -43,3 +43,11 @@ window.firebaseAuth = {
 window.dispatchEvent(new Event("firebase-ready"));
 
 console.log("✅ Firebase initialized & exposed to window");
+
+// Global error handler for Firebase loading
+window.addEventListener('error', function(e) {
+    if (e.target && (e.target.src || '').includes('firebase')) {
+        console.error("🔥 Firebase script failed to load:", e.target.src);
+        alert("Critical Error: Firebase failed to load. Please checks your internet connection or ad blocker.");
+    }
+}, true);
