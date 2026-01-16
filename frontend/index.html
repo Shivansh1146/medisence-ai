@@ -27,6 +27,7 @@
 
   <!-- Icons - Multiple Libraries -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
 
   <!-- Animate.css for Advanced Animations -->
@@ -353,9 +354,8 @@
           </div>
 
           <h1 class="hero-title">
-            Advanced Healthcare
+            Advanced Healthcare<br />
             <span class="gradient-text">Intelligence</span>
-            <br />Through Smart Automation
           </h1>
 
           <p class="hero-description">
@@ -411,36 +411,41 @@
             </button>
           </div>
 
-          <!-- Floating Stats Cards -->
-          <div class="floating-cards">
-            <div class="floating-card card-1" data-aos="fade-up" data-aos-delay="100">
-              <i class="fas fa-brain"></i>
-              <span>Symptom Analysis</span>
-            </div>
-            <div class="floating-card card-2" data-aos="fade-up" data-aos-delay="200">
-              <i class="fas fa-cloud-upload-alt"></i>
-              <span>Cloud Infrastructure</span>
-            </div>
-            <div class="floating-card card-3" data-aos="fade-up" data-aos-delay="300">
-              <i class="fas fa-shield-virus"></i>
-              <span>HIPAA Compliant</span>
-            </div>
-          </div>
+          <!-- Hero Features Container -->
+          <div class="hero-features-container">
 
-          <!-- Platform Capabilities -->
-          <div class="hero-stats">
-            <div class="stat-item">
-              <div class="stat-label">Platform Availability</div>
-              <div class="stat-value">24×7</div>
+            <!-- Group 1: Capabilities (Trust Layer) -->
+            <div class="capabilities-group">
+              <div class="feature-card">
+                <i class="fas fa-brain"></i>
+                <span>Symptom<br>Analysis</span>
+              </div>
+              <div class="feature-card">
+                <i class="fas fa-cloud"></i>
+                <span>Cloud<br>Infrastructure</span>
+              </div>
+              <div class="feature-card">
+                <i class="fas fa-shield-alt"></i>
+                <span>HIPAA<br>Compliant</span>
+              </div>
             </div>
-            <div class="stat-item">
-              <div class="stat-label">Registered Users</div>
-              <div class="stat-value">1K+</div>
+
+            <!-- Group 2: Platform Signals (Confidence Layer) -->
+            <div class="signals-group">
+              <div class="stat-card">
+                <div class="stat-label">Platform Availability</div>
+                <div class="stat-value">24×7</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">Registered Users</div>
+                <div class="stat-value">1K+</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">Typical AI Response</div>
+                <div class="stat-value">&lt;2 min</div>
+              </div>
             </div>
-            <div class="stat-item">
-              <div class="stat-label">Typical AI Response</div>
-              <div class="stat-value">&lt;2 min</div>
-            </div>
+
           </div>
         </div>
       </div>
@@ -451,11 +456,10 @@
   <section class="symptom-checker-section" id="symptom-checker">
     <div class="container">
       <div class="section-header" data-aos="fade-up">
-        <span class="section-badge">NLP-Powered Analysis</span>
+        <span class="section-badge">AI-Powered Assessment</span>
         <h2 class="section-title">AI Symptom Checker</h2>
         <p class="section-description">
-          Describe your symptoms in natural language - Our AI understands and
-          analyzes using advanced NLP technology
+          Describe your symptoms in your own words. Our advanced AI analyzes them to provide instant insights and medical guidance.
         </p>
       </div>
 
@@ -465,40 +469,37 @@
           <div class="symptom-form-card">
             <h3><i class="fas fa-stethoscope"></i> Describe Your Symptoms</h3>
 
-            <div class="form-group">
+            <div class="form-group symptom-input-group">
               <label>What are you experiencing?</label>
               <textarea id="symptomInput" class="symptom-textarea"
                 placeholder="Type naturally... e.g., 'I have fever since yesterday and body aches'" rows="4"></textarea>
-              <div class="textarea-hint">
-                <i class="fas fa-lightbulb"></i>
-                Speak naturally - our AI understands context
-              </div>
             </div>
 
-            <div class="form-row">
+            <div class="form-row symptom-details-row">
               <div class="form-group">
-                <label>Duration</label>
-                <select id="symptomDuration" class="form-control">
-                  <option value="">Select duration</option>
-                  <option value="few_hours">Few hours</option>
+                <label>Duration <span style="color: var(--danger-500)">*</span></label>
+                <select id="symptomDuration" class="form-control form-select-sm">
+                  <option value="" disabled selected hidden>Select duration</option>
+                  <option value="hours">Less than 24 hours</option>
                   <option value="1_day">1 day</option>
-                  <option value="2_3_days">2-3 days</option>
-                  <option value="week">A week</option>
-                  <option value="more">More than a week</option>
+                  <option value="2_3_days">2–3 days</option>
+                  <option value="4_7_days">4–7 days</option>
+                  <option value="1_week_plus">More than 1 week</option>
                 </select>
+                <small class="input-helper-text">Helps assess symptom progression</small>
               </div>
 
               <div class="form-group">
-                <label>Severity (1-10)</label>
-                <input type="range" id="severityRange" class="severity-slider" min="1" max="10" value="5" />
+                <label>Severity (1-10) <span style="color: var(--danger-500)">*</span></label>
+                <input type="range" id="severityRange" class="severity-slider" min="0" max="10" value="0" />
                 <div class="severity-value">
-                  <span id="severityValue">5</span>/10
+                  <span id="severityValue">-</span>/10
                 </div>
               </div>
             </div>
 
             <!-- Quick Symptom Tags -->
-            <div class="quick-symptoms">
+            <div class="quick-symptoms symptom-chips-section">
               <label>Quick Select (Optional):</label>
               <div class="symptom-tags">
                 <button class="symptom-tag" onclick="addSymptom('fever')">
@@ -524,11 +525,11 @@
 
             <!-- Action Buttons -->
             <div class="form-actions">
-              <button class="btn btn-primary btn-large" onclick="analyzeSymptoms()">
+              <button class="btn btn-primary" onclick="analyzeSymptoms()">
                 <i class="fas fa-brain"></i>
                 Analyze with AI
               </button>
-              <button class="btn btn-secondary" onclick="useVoiceInput('symptom')">
+              <button class="btn btn-secondary" id="voiceInputBtnSymptom" data-voice-type="symptom">
                 <i class="fas fa-microphone"></i>
                 Voice Input
               </button>
@@ -541,7 +542,7 @@
           <div class="symptom-results-card" id="symptomResults" style="display: none">
             <div class="results-header">
               <h3><i class="fas fa-chart-line"></i> AI Analysis Results</h3>
-              <span class="powered-by">Powered by Google Gemini</span>
+
             </div>
 
             <div class="results-body" id="symptomResultsBody">
@@ -553,50 +554,14 @@
                 <i class="fas fa-calendar-plus"></i>
                 Book Appointment
               </button>
-              <button class="btn btn-secondary" onclick="exportSymptomReport()">
+              <button class="btn btn-outline-secondary" onclick="exportSymptomReport()">
                 <i class="fas fa-download"></i>
                 Download Report
               </button>
             </div>
           </div>
 
-          <!-- Info Card (Shows when no results) -->
-          <div class="info-card" id="symptomInfoCard">
-            <div class="info-icon">
-              <i class="fas fa-brain"></i>
-            </div>
-            <h3>How Our AI Works</h3>
-            <ul class="info-list">
-              <li>
-                <i class="fas fa-check-circle"></i>
-                <div>
-                  <strong>Natural Language Processing</strong>
-                  <p>Understands symptoms in your own words</p>
-                </div>
-              </li>
-              <li>
-                <i class="fas fa-check-circle"></i>
-                <div>
-                  <strong>Context Analysis</strong>
-                  <p>Considers duration, severity, and patterns</p>
-                </div>
-              </li>
-              <li>
-                <i class="fas fa-check-circle"></i>
-                <div>
-                  <strong>Instant Results</strong>
-                  <p>Get preliminary diagnosis in under 2 minutes</p>
-                </div>
-              </li>
-              <li>
-                <i class="fas fa-check-circle"></i>
-                <div>
-                  <strong>Accuracy Guaranteed</strong>
-                  <p>98% accuracy with continuous learning</p>
-                </div>
-              </li>
-            </ul>
-          </div>
+
         </div>
       </div>
     </div>
@@ -958,7 +923,7 @@
                 <textarea id="chatInput" class="chat-input" placeholder="Type your message... (Press Enter to send)"
                   rows="1" onkeypress="handleChatKeyPress(event)"></textarea>
 
-                <button class="input-action-btn" onclick="toggleVoiceInput()" title="Voice Input">
+                <button class="input-action-btn" id="voiceInputBtnChat" data-voice-type="chat" title="Voice Input">
                   <i class="fas fa-microphone"></i>
                 </button>
 

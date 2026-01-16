@@ -632,11 +632,50 @@ function updateSeverityDisplay() {
   const valueDisplay = document.getElementById("severityValue");
 
   if (slider && valueDisplay) {
-    slider.addEventListener("input", function () {
-      valueDisplay.textContent = this.value;
-    });
+    const update = () => {
+      valueDisplay.textContent = slider.value === "0" ? "-" : slider.value;
+    };
+    slider.addEventListener("input", update);
+    slider.addEventListener("change", update); // Ensure updates on release
+    // Initialize
+    update();
   }
 }
+
+// Input validation for symptom textarea
+function setupSymptomInputValidation() {
+  const symptomInput = document.getElementById('symptomInput');
+  const analyzeBtn = document.querySelector('.symptom-form-card .btn-primary.btn-large');
+
+  if (!symptomInput || !analyzeBtn) return;
+
+  // Create validation helper element
+  let validationHelper = symptomInput.parentElement.querySelector('.input-validation-helper');
+  if (!validationHelper) {
+    validationHelper = document.createElement('div');
+    validationHelper.className = 'input-validation-helper';
+    validationHelper.style.display = 'none';
+    symptomInput.parentElement.appendChild(validationHelper);
+  }
+
+  symptomInput.addEventListener('input', function() {
+    const text = this.value.trim();
+
+    if (text.length > 0 && text.length < 5) {
+      validationHelper.textContent = 'Please describe your symptoms in a bit more detail.';
+      validationHelper.style.display = 'flex';
+      analyzeBtn.disabled = true;
+      analyzeBtn.style.opacity = '0.5';
+      analyzeBtn.style.cursor = 'not-allowed';
+    } else {
+      validationHelper.style.display = 'none';
+      analyzeBtn.disabled = false;
+      analyzeBtn.style.opacity = '1';
+      analyzeBtn.style.cursor = 'pointer';
+    }
+  });
+}
+
 
 function addSymptom(symptom) {
   const textarea = document.getElementById("symptomInput");
@@ -658,6 +697,31 @@ async function analyzeSymptoms() {
 
   if (!symptomInput || !symptomInput.value.trim()) {
     showToast("Please describe your symptoms", "warning");
+    symptomInput.classList.add("is-invalid");
+    symptomInput.addEventListener('input', () => symptomInput.classList.remove("is-invalid"), { once: true });
+    symptomInput.focus();
+    return;
+  }
+
+  // Validate Duration
+  if (!duration || !duration.value) {
+    showToast("Please select symptom duration", "warning");
+    if (duration) {
+      duration.classList.add("is-invalid");
+      duration.addEventListener('input', () => duration.classList.remove("is-invalid"), { once: true });
+      duration.focus();
+    }
+    return;
+  }
+
+  // Validate Severity
+  if (severity && (severity.value === "0" || !severity.value)) {
+    showToast("Please select severity level (1-10)", "warning");
+    if (severity) {
+      severity.classList.add("is-invalid");
+      severity.addEventListener('input', () => severity.classList.remove("is-invalid"), { once: true });
+      severity.focus();
+    }
     return;
   }
 
@@ -665,19 +729,38 @@ async function analyzeSymptoms() {
   const durationValue = duration ? duration.value : "";
   const severityValue = severity ? severity.value : "5";
 
+  // Disable inputs during analysis
+  const formCard = document.querySelector('.symptom-form-card');
+  if (formCard) {
+    formCard.classList.add('form-disabled');
+    formCard.querySelectorAll('input, textarea, select, button').forEach(el => {
+      el.disabled = true;
+    });
+  }
+
   // Show loading
   showToast("Analyzing your symptoms with AI...", "info");
 
-  // Hide info card, show results card
+  // Hide info card, show results card with loading state
+  // Hide info card, trigger layout expansion, show results card
   const infoCard = document.getElementById("symptomInfoCard");
   const resultsCard = document.getElementById("symptomResults");
   const resultsBody = document.getElementById("symptomResultsBody");
+  const layoutContainer = document.querySelector('.symptom-checker-container');
+
+  if (layoutContainer) layoutContainer.classList.add('has-analysis');
 
   if (infoCard) infoCard.style.display = "none";
   if (resultsCard) resultsCard.style.display = "block";
-  if (resultsBody)
-    resultsBody.innerHTML =
-      '<div class="loading-spinner"></div><p>Analyzing with Google Gemini AI...</p>';
+  if (resultsBody) {
+    resultsBody.innerHTML = `
+      <div class="loading-state">
+        <div class="loading-spinner"></div>
+        <p class="loading-text">Analyzing your symptoms...</p>
+        <p class="loading-subtext">This may take a few moments</p>
+      </div>
+    `;
+  }
 
   try {
     const response = await fetchWithTimeout(
@@ -712,13 +795,21 @@ async function analyzeSymptoms() {
     console.error("Error analyzing symptoms:", error);
     if (resultsBody) {
       resultsBody.innerHTML = `
-                <div class="error-message">
-                    <i class="fas fa-exclamation-circle"></i>
-                    <p>Unable to analyze symptoms. Please try again.</p>
-                </div>
-            `;
+        <div class="error-message">
+          <i class="fas fa-exclamation-circle"></i>
+          <p>Unable to analyze symptoms. Please try again.</p>
+        </div>
+      `;
     }
     showToast("Error analyzing symptoms. Please try again.", "error");
+  } finally {
+    // Re-enable inputs
+    if (formCard) {
+      formCard.classList.remove('form-disabled');
+      formCard.querySelectorAll('input, textarea, select, button').forEach(el => {
+        el.disabled = false;
+      });
+    }
   }
 }
 
@@ -727,40 +818,34 @@ function displaySymptomResults(analysis, severity) {
   if (!resultsBody) return;
 
   const severityColor =
-    severity <= 3 ? "success" : severity <= 6 ? "warning" : "danger";
+    severity <= 6 ? "warning" : "danger";
   const severityText =
     severity <= 3 ? "Mild" : severity <= 6 ? "Moderate" : "Severe";
 
+  // Pre-process AI response for better formatting
+  let formattedAnalysis = analysis
+    .replace(/•/g, '\n- ') // Convert bullets to markdown list items
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Convert ALL **text** to bold
+    .replace(/\*\*/g, '') // Remove any potential stray asterisks
+    .replace(/(My Recommendations:|Self-Care Tips:)/g, '\n\n<strong>$1</strong>\n'); // Ensure headers have spacing
+
+  // Parse AI response
+  const analysisHTML = typeof marked !== "undefined"
+    ? marked.parse(formattedAnalysis)
+    : formattedAnalysis.replace(/\n/g, "<br>");
+
   resultsBody.innerHTML = `
-        <div class="severity-badge ${severityColor}">
-            <i class="fas fa-info-circle"></i>
-            Severity: ${severityText} (${severity}/10)
-        </div>
-        <div class="analysis-content">
-            <h4><i class="fas fa-brain"></i> AI Analysis</h4>
-            <div class="analysis-text">${
-              typeof marked !== "undefined"
-                ? marked.parse(analysis)
-                : analysis.replace(/\n/g, "<br>")
-            }</div>
-        </div>
-        <div class="recommendations">
-            <h4><i class="fas fa-lightbulb"></i> Recommendations</h4>
-            <ul>
-                <li><i class="fas fa-check"></i> ${
-                  severity > 7
-                    ? "Seek immediate medical attention"
-                    : "Monitor symptoms closely"
-                }</li>
-                <li><i class="fas fa-check"></i> Stay hydrated and rest</li>
-                <li><i class="fas fa-check"></i> ${
-                  severity > 5
-                    ? "Consider booking an appointment"
-                    : "Track your symptoms"
-                }</li>
-            </ul>
-        </div>
-    `;
+    <!-- Severity Badge -->
+    <div class="severity-badge ${severityColor}">
+      <i class="fas fa-info-circle"></i>
+      Severity: ${severityText} (${severity}/10)
+    </div>
+
+    <!-- Summary Section -->
+    <div class="results-section results-summary">
+      <div class="analysis-text">${analysisHTML}</div>
+    </div>
+  `;
 
   showToast("Symptom analysis complete!", "success");
 }
@@ -771,65 +856,230 @@ function bookAppointmentFromSymptom() {
 }
 
 function exportSymptomReport() {
-  if (state.symptoms.length === 0) {
-    showToast("No symptom data to export", "warning");
+  const element = document.getElementById("symptomResults");
+  if (!element || element.style.display === "none") {
+    showToast("No report to download", "warning");
     return;
   }
 
-  const latest = state.symptoms[state.symptoms.length - 1];
-  const report = `
-MedicSense AI - Symptom Report
-Generated: ${new Date().toLocaleString()}
+  showToast("Generating image report...", "info");
 
-Symptoms: ${latest.symptoms}
-Duration: ${latest.duration}
-Severity: ${latest.severity}/10
+  // Ensure html2canvas is loaded
+  if (typeof html2canvas === "undefined") {
+    showToast("Report generation library loading...", "info");
+    setTimeout(exportSymptomReport, 1000);
+    return;
+  }
 
-AI Analysis:
-${latest.analysis}
+  // Inject Timestamp temporarily
+  const timestampDiv = document.createElement('div');
+  timestampDiv.innerHTML = `<p style="color: #6b7280; font-size: 0.875rem; margin-bottom: 1rem;"><strong>Report Generated:</strong> ${new Date().toLocaleString()}</p>`;
+  element.prepend(timestampDiv);
 
----
-This is not a medical diagnosis. Please consult a healthcare professional.
-    `.trim();
-
-  downloadTextFile(report, "symptom-report.txt");
-  showToast("Report downloaded successfully!", "success");
+  html2canvas(element, {
+    useCORS: true,
+    scale: 2, // Higher quality
+    backgroundColor: "#ffffff", // Ensure white background
+    ignoreElements: (el) => el.classList.contains('results-actions') // Hide buttons in image
+  }).then(canvas => {
+    try {
+      const link = document.createElement('a');
+      const timestamp = new Date().toISOString().slice(0, 10);
+      link.download = `MedicSense_Report_${timestamp}.png`;
+      link.href = canvas.toDataURL("image/png");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast("Report downloaded as image!", "success");
+    } catch (err) {
+      console.error("Download failed:", err);
+      showToast("Failed to save image.", "error");
+    } finally {
+      timestampDiv.remove(); // Clean up
+    }
+  }).catch(err => {
+    console.error("Image generation failed:", err);
+    timestampDiv.remove(); // Clean up
+    showToast("Failed to generate image report.", "error");
+  });
 }
 
-function useVoiceInput(type) {
-  if (!("webkitSpeechRecognition" in window || "SpeechRecognition" in window)) {
+// ========================================
+// VOICE INPUT - PRODUCTION-READY IMPLEMENTATION
+// ========================================
+// CRITICAL: recognition.start() MUST be called synchronously in user gesture context
+// Event delegation ensures the click handler runs immediately without async delays
+
+document.addEventListener("click", (e) => {
+  // Check if clicked element is a voice input button
+  const btn = e.target.closest("#voiceInputBtnSymptom, #voiceInputBtnChat");
+  if (!btn) return;
+
+  const voiceType = btn.dataset.voiceType; // "symptom" or "chat"
+  startVoiceInput(voiceType);
+});
+
+// Global variable to track active voice recognition
+let currentRecognition = null;
+
+function startVoiceInput(type) {
+  // Check browser support
+  const SpeechRecognition =
+    window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  if (!SpeechRecognition) {
     showToast("Voice input not supported in this browser", "error");
     return;
   }
 
-  const SpeechRecognition =
-    window.SpeechRecognition || window.webkitSpeechRecognition;
-  const recognition = new SpeechRecognition();
+  // Get the button that was clicked
+  const buttonId = type === "symptom" ? "voiceInputBtnSymptom" : "voiceInputBtnChat";
+  const button = document.getElementById(buttonId);
 
+  if (!button) {
+    console.error("Voice input button not found:", buttonId);
+    return;
+  }
+
+  // IF ALREADY LISTENING, STOP IT
+  if (currentRecognition) {
+    console.log("🛑 Stopping active voice input...");
+    currentRecognition.stop();
+    currentRecognition = null;
+    return; // onend will handle UI reset
+  }
+
+  // Helper function to set button to listening state
+  function setListeningState() {
+    button.classList.add("voice-listening");
+    button.disabled = false; // Allow user to click to stop!
+
+    // Update button text if it has text content
+    const buttonText = button.querySelector("span") || button.childNodes[button.childNodes.length - 1];
+    if (buttonText && buttonText.nodeType === Node.TEXT_NODE) {
+      buttonText.textContent = " Stop Listening";
+    } else if (button.innerText && button.innerText.includes("Voice Input")) {
+      // For buttons with text
+      const icon = button.querySelector("i");
+      button.innerHTML = "";
+      if (icon) {
+        // Change icon to stop circle if possible, or keep formatting
+        icon.className = "fas fa-stop-circle";
+        button.appendChild(icon);
+      }
+      button.appendChild(document.createTextNode(" Stop Listening"));
+    }
+  }
+
+  // Helper function to reset button to default state
+  function resetButtonState() {
+    button.classList.remove("voice-listening");
+    button.disabled = false;
+    currentRecognition = null; // Clear global state
+
+    // Restore original button text if it has text content
+    const buttonText = button.querySelector("span") || button.childNodes[button.childNodes.length - 1];
+    if (buttonText && buttonText.nodeType === Node.TEXT_NODE) {
+      buttonText.textContent = " Voice Input";
+    } else {
+      // Restore original text for buttons with text
+      button.innerHTML = '<i class="fas fa-microphone"></i> Voice Input';
+    }
+  }
+
+  // Create new recognition instance per click (do NOT reuse)
+  const recognition = new SpeechRecognition();
+  recognition.lang = "en-US";
   recognition.continuous = false;
   recognition.interimResults = false;
-  recognition.lang = "en-US";
 
   recognition.onstart = function () {
-    showToast("Listening... Speak now", "info");
+    console.log("🎤 Voice listening started");
+    currentRecognition = recognition; // Set global
+    setListeningState();
+    showToast("🎤 Listening... Tap to stop", "info");
   };
 
   recognition.onresult = function (event) {
     const transcript = event.results[0][0].transcript;
+    console.log("🎧 Voice result:", transcript);
+
+    // Insert transcript into appropriate input field
     if (type === "symptom") {
-      document.getElementById("symptomInput").value = transcript;
-    } else {
-      document.getElementById("chatInput").value = transcript;
+      const symptomInput = document.getElementById("symptomInput");
+      if (symptomInput) {
+        symptomInput.value = transcript;
+      }
+    } else if (type === "chat") {
+      const chatInput = document.getElementById("chatInput");
+      if (chatInput) {
+        chatInput.value = transcript;
+      }
     }
-    showToast("Voice input captured!", "success");
+
+    showToast("✅ Voice input captured!", "success");
   };
 
   recognition.onerror = function (event) {
-    showToast("Voice input error: " + event.error, "error");
+    console.error("❌ Voice error:", event.error);
+
+    // Ignore "aborted" error if user manually stopped it
+    if (event.error === 'aborted') {
+         resetButtonState();
+         return;
+    }
+
+    // Reset button state on error
+    resetButtonState();
+
+    // Provide user-friendly error messages
+    let errorMessage = "Voice input error";
+    switch (event.error) {
+      case "not-allowed":
+      case "permission-denied":
+        errorMessage = "🚫 Microphone access denied. Please allow microphone access in your browser settings.";
+        break;
+      case "no-speech":
+        errorMessage = "🔇 No speech detected. Please try again and speak clearly.";
+        break;
+      case "audio-capture":
+        errorMessage = "🎤 No microphone found. Please connect a microphone and try again.";
+        break;
+      case "network":
+        errorMessage = "🌐 Network error. Please check your internet connection.";
+        break;
+      default:
+        errorMessage = `Voice input error: ${event.error}`;
+    }
+
+    showToast(errorMessage, "error");
   };
 
-  recognition.start();
+  recognition.onend = function () {
+    console.log("🛑 Voice input ended");
+    resetButtonState();
+  };
+
+  // CRITICAL: Call start() immediately
+  try {
+    recognition.start();
+  } catch (error) {
+    console.error("Failed to start voice input:", error);
+    resetButtonState();
+    showToast("Failed to start voice input. Please try again.", "error");
+  }
 }
+
+// Legacy function stubs for backward compatibility (if called elsewhere)
+function useVoiceInput(type) {
+  startVoiceInput(type);
+}
+
+function toggleVoiceInput() {
+  startVoiceInput("chat");
+}
+
+
 
 // ========================================
 // APPOINTMENT FUNCTIONS
@@ -2333,3 +2583,10 @@ document.addEventListener("keydown", (e) => {
 console.log(
   "✅ MedicSense AI Ultra - Ready to solve healthcare automation challenges!"
 );
+
+// Initialize symptom input validation when page loads
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', setupSymptomInputValidation);
+} else {
+  setupSymptomInputValidation();
+}
